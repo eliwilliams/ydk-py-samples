@@ -1,0 +1,56 @@
+module switch {
+  namespace "http://www.cisco.com/switch";
+  prefix s;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  include switch-types;
+  include switch-dot1x;
+  include switch-interfaces;
+  include switch-vlan;
+  include switch-action;
+  include switch-stp;
+  include switch-mac;
+  include switch-qos;
+  include switch-ip;
+  include switch-radius;
+  include switch-wrr-sp-lb-br;
+  include switch-poe; 
+  include switch-monitor;
+  include switch-support;
+
+  organization "Cisco Systems, Inc.";
+  description
+    "A module describing some common components typically found
+      on routers
+
+       interfaces - configuration and status of network interfaces
+
+     This module is the main YANG module, and each component has its
+     own YANG submodule.";
+
+  revision 2015-06-23 {
+    description
+      "Initial revision.";
+  }
+
+  container switch {
+    tailf:info "Configure L2 switch";
+    tailf:cli-add-mode;
+    uses interface-cmd;
+    uses vlan-cmd;
+    uses action-cmd;
+    uses dot1x-cmd;
+    uses ip-cmd;
+    uses mac-cmd;
+    uses qos-cmd;
+    uses radius-server-cmd;
+    uses spanning-tree-cmd;
+    uses global-misc-cmd;
+    uses power-inline-cmd;
+    uses monitor-cmd;
+    uses thread-cmd;
+  }
+}

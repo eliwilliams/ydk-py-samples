@@ -1,0 +1,136 @@
+submodule switch-wrr-sp-lb-br {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The top level configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping global-misc-cmd {
+  container wrr-queue {
+    tailf:info "Configure queue drop mechanism on egress port";
+    list cos-map {
+      tailf:info "Map assigned CoS values to select an egress queue. Use
+                  the command no form to return to the default values";
+      tailf:cli-suppress-mode;
+      tailf:cli-incomplete-command;
+      tailf:cli-delete-when-empty;
+      key cos;
+      leaf cos {
+        tailf:cli-drop-node-name;
+        tailf:cli-suppress-range;
+        type uint8 {
+          range "0..7";
+          tailf:info "<0-7>;;  CoS values for mapping to a specific queue";
+        }
+      }
+      leaf queue {
+        tailf:cli-drop-node-name;
+        type uint8 {
+        tailf:info "<1-8>;; The queue number to which the following CoS values are mapped";
+        }
+      }
+    }
+  }
+
+  container priority-queue {
+    tailf:hidden full;
+    tailf:info "Set priority queue parameters";
+    container egress {
+      tailf:info "Enable the egress queues to be expedite queue";
+      leaf num-of-queues {
+        tailf:info "Configure the number of expedite queues";
+        type uint8 {
+          range "0..8";
+          tailf:info "<0-8>;;  Assign the number of queues to be expedite queues. The
+                       expedite queues would be the queues with higher indexes";
+        }
+      }
+    }
+  }
+  container port-channel {
+    //tailf:hidden full;
+    tailf:info "Configure port-channel";
+    leaf load-balance {
+      tailf:info "Configure load balancing policy of the port channeling";
+      type enumeration {
+        enum src-dst-mac-ip {
+         tailf:info "Port channel load balancing is based on source and destination of MAC and IP addresses";
+         value 1;
+        }
+        enum src-dst-mac {
+         tailf:info "Port channel load balancing is based on source and destination MAC address";
+         value 2;
+        }
+      }
+      default src-dst-mac;
+    }
+  }
+  container bridge {
+    tailf:info "Global Bridge table configuration commands";
+    container multicast {
+      tailf:info "Global multicast commands";
+      leaf filtering {
+        tailf:info "Enable multicast filtering rules";
+        type empty;
+      }
+    }
+  }
+  container lacp {
+    //tailf:hidden full;
+    tailf:info "Global IEEE 802.3 link aggregation commands";
+    leaf system-priority {
+      tailf:info "IEEE 802.3 link aggregation system priorit";
+      type uint16 {
+        range "1..65535";
+        tailf:info "<1-65535>;;  Port-priority value";
+      }
+      default 1;
+    }
+  }
+  
+//  container monitor {
+//    tailf:info "Perform switch port monitor";
+//    list session {
+//      tailf:info "Define a destination session number identifier with the SPAN";
+//      key "sid dir";
+//      leaf sid {
+//        type uint8 {
+//          range "1..7";
+//          tailf:info "WORD<1-7>;; Session number - specifies the session number identifier with the SPAN";
+//        }
+//      }
+//      leaf dir {
+//        type enumeration {
+//           enum "source" {
+//             tailf:info "Define a source SPAN interface";
+//             value 0;
+//           }
+//           enum "destination" {
+//             tailf:info "Define a destination SPAN interface";
+//             value 1;
+//           }
+//        }
+//      }
+//    }
+//  }
+
+  }
+}

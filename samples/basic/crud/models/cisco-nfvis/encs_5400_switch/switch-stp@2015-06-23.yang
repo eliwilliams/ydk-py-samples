@@ -1,0 +1,352 @@
+submodule switch-stp {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'spanning-tree' component provides support for configuring 
+     spanning tree.";
+
+  revision 2015-06-23{
+    description
+      "Initial revision.";
+  }
+
+  grouping intf-stp-bpdu-info {
+    leaf Port {
+      type string;
+    }
+    leaf Admin-Mode {
+      type string;
+    }
+    leaf Oper-Mode {
+      type string;
+    }
+  }
+
+  grouping intf-stp-info {
+    leaf Port {
+      type string;
+    }
+    leaf Admin-state {
+      type string;
+    }
+    leaf Prio.Nbr {
+      type string;
+    }
+    leaf Cost {
+      type uint32;
+    }
+    leaf Port-state {
+      type string;
+    }
+    leaf Role {
+      type string;
+    }
+    leaf PortFast {
+      type string;
+    }
+    leaf Type {
+      type string;
+    }
+    leaf GuardRoot {
+      type string;
+    }
+  }
+
+  grouping spanning-tree-cmd {
+  container spanning-tree {
+    tailf:info "Configure Spanning Tree Subsystem";
+    tailf:cli-incomplete-no;
+    leaf enable {
+      tailf:info "Enable Spanning Tree feature";
+      tailf:cli-full-command;
+      type empty;
+    }
+    leaf bpdu {
+      tailf:info "Configure BPDU handling when STP is disabled.";
+      tailf:cli-full-command;
+      type enumeration {
+        enum "filtering" {
+         tailf:code-name stp-bpdu-filtering;
+         tailf:info "Specify that when spanning tree is disabled on an"
+               +"interface, BPDU packets would be filtered.";
+        }
+        enum "flooding" {
+         tailf:info "Specify that when spanning tree is disabled on an"
+               +"interface, untagged BPDU packets would be flooded"
+               +"unconditionally (Without applying VLAN rules), to all"
+               +"ports with spanning tree disabled. Tagged BPDU packets"
+               +"would be filtered.";
+        }
+      }
+      default "flooding";
+    }
+    leaf forward-time {
+      tailf:info "Set a Spanning Tree FORWARD Interval";
+      tailf:cli-full-command;
+      type uint8 {
+        range "4..30";
+        tailf:info "<4-30>;;  Set a Spanning Tree FORWARD Interval in seconds, \n"
+              +"Note: 2*(Forward-Time - 1) >= Max-Age >= 2*(Hello-Time + 1)";
+      }
+      default 15;
+    }
+    leaf hello-time {
+      tailf:info "Set a Spanning Tree HELLO Interval";
+      tailf:cli-full-command;
+      type uint8 {
+        range "1..10";
+        tailf:info "<1-10>;;  Set a Spanning Tree HELLO Interval in seconds, \n"
+              +"Note: 2*(Forward-Time - 1) >= Max-Age >= 2*(Hello-Time + 1)";
+      }
+      default 2;
+    }
+    leaf max-age {
+      tailf:info "Set a Spanning Tree MAX AGE Interval";
+      tailf:cli-full-command;
+      type uint8 {
+        range "6..40";
+        tailf:info "<6-40>;;  Set a Spanning Tree MAX AGE in seconds, \n"
+              +"Note: 2*(Forward-Time - 1) >= Max-Age >= 2*(Hello-Time + 1)";
+      }
+      default 20;
+    }
+    leaf loopback-guard {
+      tailf:info "Protect network from STP loopback";
+      tailf:cli-full-command;
+      type empty;
+    }
+    leaf mode {
+      tailf:info "Spanning tree protocol type";
+      tailf:cli-full-command;
+      type enumeration {
+        enum "stp" {
+          tailf:code-name gbl-mode-stp;
+          tailf:info "Configure IEEE 802.1D Spanning Tree Protocol";
+        }
+        enum "rstp" {
+          tailf:code-name gbl-mode-rstp;
+          tailf:info "Configure IEEE 802.1W Rapid Spanning Tree Protocol";
+        }
+//        enum "mst" {
+//          tailf:code-name gbl-mode-mst;
+//          tailf:info "Configure IEEE 802.1S Multiple Spanning Tree Protocol";
+//        }
+      }
+      default "rstp";
+    }
+    container pathcost {
+      tailf:info "Spanning tree pathcost options";
+      leaf method {
+        tailf:info "Method to calculate default port path cost";
+        tailf:cli-full-command;
+        type enumeration {
+          enum long {
+            tailf:code-name method-long;
+            tailf:info "Use 32 bit based values for default port path costs";
+          }
+          enum short {
+            tailf:code-name method-short;
+            tailf:info "Use 16 bit based values for default port path costs";
+          }
+        }    
+        default long;
+      }
+    }
+    leaf priority {
+      tailf:info "Change spanning tree priority";
+      tailf:cli-full-command;
+      type uint16 {
+        range "0|4096|8192|12288|16384|20480|24576|28672|32768|36864|40960|45056|49152|53248|57344|61440";
+        tailf:info "<0-61440>;;  Specify a Spanning Tree Priority (in steps of 4096)";
+      }
+      default 32768;
+    }
+    container mst {
+      tailf:hidden full;
+      tailf:info "Configure MSTP Subsystem";
+      list instance-id {
+        tailf:cli-drop-node-name;
+        tailf:cli-incomplete-command;
+        key inst-id;
+        leaf inst-id {
+          tailf:cli-suppress-range;
+          type uint8 {
+          range "1..63";
+          tailf:info "<1-63>;;  Specify instance ID";
+          }
+        }
+        leaf priority {
+          tailf:info "Specify a Spanning Tree Priority (in steps of 4096)";
+          tailf:cli-full-command;
+          type uint32 {
+            tailf:info "<0-61440>;; Specify a Spanning Tree Priority (in steps of 4096)";
+            range "0..61440";
+          }
+        }
+      }
+      leaf max-hops {
+        tailf:info "Configure the maximum hops allowed in a region for a Spanning Tree";
+        tailf:cli-full-command;
+        type uint8 {
+          range "1..40";
+          tailf:info "<1-40>;;  Configure the number of hops in a region before the BPDU is discarded and the information held for a port is aged";
+        }
+      }
+      container configuration {
+        tailf:cli-add-mode;
+        tailf:cli-delayed-auto-commit;
+        tailf:cli-exit-command "abort" {
+          tailf:info "Abort the MST subsystem without applying configuration";
+        }
+        leaf name {
+          tailf:info "Configure the MST region name";
+          type string {
+            length "1..32";
+            tailf:info "WORD<1-32>;;  Configure the MST region name";
+          }
+        }
+        leaf revision {
+          tailf:info "Configure the MST revision level";
+          type uint32 {
+            range "0..65535";
+            tailf:info "<0-65535>;;  Specify the MSTP level";
+          }
+        }
+        list instance {
+          tailf:info "Configure an MST instance";
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-command;
+          key inst-id;
+          leaf inst-id {
+            tailf:cli-incomplete-command;
+            tailf:cli-suppress-range;
+            type uint8 {
+              range "1..15";
+              tailf:info "<1-15>;;  Specify an instance ID";
+            }
+          }
+//TODO add range support
+          leaf vlan {
+            tailf:info "Add VLANs to an instance";
+            type uint16 {
+              range "1..4094";
+              tailf:info "<1-4094>;;  The range of VLANs specified is added to the existing
+                                      ones. To specify a range, use a hyphen. To specify a
+                                      series, use a comma";
+            }
+          }
+        }
+      }
+    }
+
+    container interface {
+      list gigabitEthernet {
+        config false;
+        tailf:info "Show Interface spanning-tree information";
+        tailf:callpoint cp-intf-spanning-tree;
+        key Port;
+        uses intf-stp-info;
+      }
+      list port-channel {
+        config false;
+        tailf:info "Show port channel spanning-tree information";
+        tailf:callpoint cp-pch-spanning-tree;
+        key Port;
+        uses intf-stp-info;
+      }
+    }
+    container BPDU {
+      tailf:hidden full;
+      list gigabitEthernet {
+        config false;
+        tailf:info "Show Interface spanning-tree information";
+        tailf:callpoint cp-BPDU-intf-spanning-tree;
+        key Port;
+        uses intf-stp-bpdu-info;
+      }
+      list port-channel {
+        config false;
+        tailf:info "Show port channel spanning-tree information";
+        tailf:callpoint cp-BPDU-pch-spanning-tree;
+        key Port;
+        uses intf-stp-bpdu-info;
+      }
+    }
+    container summary {
+      config false;
+      tailf:callpoint cp-stp-summry;
+      leaf admin-status {
+        type string;
+      }
+      leaf Operation-mode {
+        type string;
+      }
+      leaf Port-Cost-Method {
+        type string;
+      }
+      leaf Loopback-guard {
+        type string;
+      }
+    }
+
+    container root {
+      config false;
+      tailf:callpoint cp-stp-root;
+      leaf Priority {
+        type string;
+      }
+      leaf Address {
+        type string;
+      }
+      leaf Cost {
+        type uint32;
+      }
+      leaf Port {
+        type string;
+      }
+      leaf Hello-Time {
+        type uint32;
+      }
+      leaf Max-Age {
+        type uint32;
+      }
+      leaf Forward-Delay {
+        type uint32;
+      }
+    }
+    container bridge {
+      config false;
+      tailf:callpoint cp-stp-bridge;
+      leaf Priority {
+        type string;
+      }
+      leaf Address {
+        type string;
+      }
+      leaf Hello-Time {
+        type uint32;
+      }
+      leaf Max-Age {
+        type uint32;
+      }
+      leaf Forward-Delay {
+        type uint32;
+      }
+    }
+  }
+  }
+}

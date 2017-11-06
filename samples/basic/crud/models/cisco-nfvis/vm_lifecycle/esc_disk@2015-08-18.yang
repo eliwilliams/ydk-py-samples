@@ -1,0 +1,117 @@
+submodule esc_disk {
+
+  belongs-to vmlc { prefix esc; }
+
+  import ietf-inet-types { prefix "ietf-inet-types"; }
+  
+  include esc_types;
+
+  organization "Cisco Systems";
+
+  contact "Shesha Sreenivasamurthy <shesha@cisco.com>";
+
+  description
+    "ESC's disk descriptions'";
+
+  revision 2015-08-18 {
+    description "Remove image attribute 'public'";
+  }
+  revision 2015-06-29 {
+    description "Datamodel change to support list of images";
+  }
+  revision 2015-06-04 {
+    description "updated description";
+  }
+  revision 2014-06-23 {
+    description "ESC Disk";
+  }
+
+  /*******************************************************************************/
+
+  grouping disk_attributes {
+    description "Disk properties are described in this section";
+    leaf src {
+      description
+        "URL of the VM image from where it can be downloaded by ESC";
+      type ietf-inet-types:uri;
+      mandatory true;
+    }
+    leaf size {
+      description
+        "Size of the image specified by URL above. If unsure, leave it blank";
+      type int32;
+    }
+
+    leaf sizeunit {
+      description "Size unit. MiB/GiB/TiB/PiB/EiB";
+      type szunits;
+    }
+    leaf disk_format {
+      description "Format of the disk: qcow2, raw, vmdk";
+      type disk_formats;
+    }
+    leaf container_format {
+      description "";
+      type string;
+    }
+    leaf serial_console {
+      description "";
+      type boolean;
+    }
+    leaf e1000_net {
+      description "True if image has e1000 drivers";
+      type boolean;
+      default false;
+    }
+    leaf virtio_net {
+      description "True if image has VIRTIO drivers";
+      type boolean;
+      default true;
+    }
+    leaf disk_bus {
+      description "Root disk bus: ide, scsi, virtio";
+      type iobus;
+    }
+    container properties {
+      list property {
+        key "name";
+          description
+            "Storage location for additional Image properties.";
+          leaf name {
+            description
+              "Property key, for example maximum VCPUs supported by this VNF image.";
+            type string;
+            mandatory true;
+          }  
+          leaf type {
+            description
+              "Type of property.";
+            type string;
+          } 
+          leaf-list value {
+            description "One or more values";
+            type string;
+          }
+      }
+    }
+  }
+  grouping esc_disk {
+    container disk {
+      uses disk_attributes;
+    }
+  }
+  grouping esc_images {
+    container images {
+      list image {
+        description "List of images";
+        key "name";
+        leaf name {
+          description "Name of the image";
+          type escname;
+          mandatory true;
+        }
+        uses disk_attributes;
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+module version {
+    namespace "http://www.cisco.com/nfv/version";
+    prefix "version";
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "NFVIS version information";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2016-04-05 {
+        description "Initial revision";
+    }
+
+    container version {
+        description "Get NFVIS version";
+        tailf:info "Display NFVIS version";
+        tailf:callpoint version;
+        config false;
+
+        leaf name {
+            type string;
+            description "Product name";
+        }
+
+        leaf version {
+            type string;
+            description "Product version";
+        }
+
+        leaf build-date {
+            type string;
+            description "Product build date";
+        }
+    }
+}
+

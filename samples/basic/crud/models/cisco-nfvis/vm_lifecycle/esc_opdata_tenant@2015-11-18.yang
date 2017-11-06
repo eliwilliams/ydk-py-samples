@@ -1,0 +1,133 @@
+submodule esc_opdata_tenant {
+
+  /*
+   * This is the top level YANG module for ESCs tenant operational data.
+   */
+
+  belongs-to vmlc { prefix esc; }
+
+  include esc_opdata_interface;
+  include esc_opdata_volumes;
+  include esc_opdata_networks;
+  include esc_opdata_state_machines;
+  import ietf-yang-types { prefix "ietf-yang-types"; }
+  include esc_types;
+
+  organization "Cisco Systems";
+
+  contact "Shesha Sreenivasamurthy <shesha@cisco.com>";
+
+  revision 2015-11-18 {
+    description "Added volumes operational data to VMs.";
+  }
+  revision 2014-08-06 {
+    description "Elastic Services Controller Module's tenant operational data";
+  }
+  
+  grouping esc_opdata_tenant {
+    description
+      "This contains all the operational data of the services that
+       have been registered and/or instantiated";
+    container tenants {
+      presence "Indicates that the service is running";
+      list tenant {
+        key "name";
+        description "List of tenants";
+        leaf name {
+          type escname;
+        }
+        leaf tenant_id {
+          description "External tenant ID for the tenant";
+          type string;
+        }
+
+        /* Networks for this tenant */
+        uses esc_opdata_networks;
+
+        list deployments {
+          key "deployment_name service_name service_version";
+          description "List of deployments";
+          leaf deployment_name {
+            description "Name of the deployment";
+            type escname;
+          }
+          leaf service_name {
+            description "Name of the service";
+            type escname;
+          }
+          leaf service_version {
+            description "Version of the service";
+            type escversion;
+          }
+          leaf deployment_id {
+            description "Internal Deployment ID for the service";
+            type string;
+          }
+          leaf service_id {
+            description "Internal Service ID for the service";
+            type string;
+          }
+          list vm_group {
+            key "name";
+            leaf name {
+              description "Group Name";
+              type escname;
+            }
+            list vm_instance {
+              description "List of running VMs in this group";
+              /*
+               * Technically the key can be combination of hostid and
+               * vmid as same vmid can be on different host. However,
+               * currently vmid is unique globally. Therefore, just
+               * vmid is made as key
+               */
+              key "vm_id";
+
+              leaf name {
+                description "A name of the VM";
+                type escname;
+              }
+              leaf vm_id {
+                description "UUID of the VM";
+                type ietf-yang-types:uuid;
+              }
+              leaf host_id {
+                description "ID of the host where this VM is running";
+                type string;
+              }
+              leaf hostname {
+                description "Hostname where this VM is running. This is sometimes
+                referred to a hypervisor name.";
+                type string;
+              }
+              /* Interfaces for this VM */
+              uses esc_opdata_interface;
+              uses esc_opdata_volumes;
+
+              /* Any VNF statistics will be pulled directly from the VNF
+                 for now esc_opdata_devstats to be used later */
+            }
+              
+            list shared_ip {
+              description "Shared Ip is the ip address that is shared by all the VM
+              in the vm_group on a particular nidid";
+              key "nicid";
+              leaf nicid {
+                  description
+                    "Interface where the static_ip property is applied.";
+                  type uint16;   
+                  mandatory true;
+              }
+              leaf ip_address {
+                description "shared IP address for this interface";
+                type escipaddr;
+              }
+            }
+          }
+          /* State Machine for deployment */
+          uses esc_opdata_state_machines;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+submodule esc_opdata_system_config {
+
+  /*
+   * This represents operational data of the System configurations for ESC
+   */
+
+  belongs-to vmlc { prefix esc; }
+
+  organization "Cisco Systems";
+  
+  revision 2016-02-01 {
+    description "ESC System Configuration details for operational data view";
+  }
+  
+  grouping esc_opdata_system_config {
+    description
+      "This contains config data of this ESC VM ";
+     
+    container system_config {
+
+        leaf active_vim {
+          description "VIM type";
+          type string;
+        }
+
+      container openstack_config {
+
+        leaf os_auth_url {
+          description "  The Openstack Authentication URL ";
+          type string;
+        }
+        leaf admin_role {
+          description " The Admin role setting ";
+          type string;
+        }
+        leaf os_tenant_name {
+          description " The Tenant name ";
+          type string;
+        }
+        leaf os_username {
+          description " The Openstack username ";
+          type string;
+        }
+        leaf member_role {
+          description " The Member role setting ";
+          type string;
+        }
+      }
+    }
+  }
+}

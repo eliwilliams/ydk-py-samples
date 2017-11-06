@@ -1,0 +1,68 @@
+submodule switch-poe {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The top level configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping power-inline-cmd {
+    container power {
+      tailf:info "Configure the administrative mode of the inline power";
+      container inline {
+        tailf:info "Inline power";
+        leaf limit-mode {
+          type enumeration {
+            enum "port" {
+             tailf:code-name inline-port;
+             value 0;
+             tailf:info "Port power limit";
+            }
+            enum "class" {
+             tailf:code-name inline-class;
+             value 5;
+             tailf:info "Class and Port power limit";
+            }
+          }
+          default "class";
+        }
+        container stat {
+          config false;
+          tailf:cli-drop-node-name;
+          tailf:callpoint cp-power-inline-global-stat;
+            leaf power-limit-mode {
+              type string;
+            }  
+            leaf nominal-power {
+              type uint16;
+            }
+            leaf consumed-power {
+              type uint32;
+            }
+//            leaf Temp {
+//              tailf:hidden full;
+//              type uint8;
+//            }  
+        }
+      }
+    }
+  }
+
+}

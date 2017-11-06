@@ -1,0 +1,1482 @@
+module system {
+    namespace "http://www.cisco.com/nfv";
+    prefix "system";
+
+    import ietf-inet-types {
+       prefix inet;
+    }
+    import ietf-yang-types { prefix yang; }
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    include system_upgrade {
+        revision-date 2017-05-25;
+    }
+
+    include system_time {
+        revision-date 2016-10-25;
+    }
+
+    include "disk_space" {
+        revision-date 2016-07-13;
+    }
+
+    include "thread_stats" {
+        revision-date 2017-05-10;
+    }
+
+    include "system_logging" {
+        revision-date 2017-05-15;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "System wide configuration";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-07-17 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Added secondary ip for /system/settings/wan.
+             Added include of thread_stats for thread statistics.
+             Added include of system_logging for syslog configuration.
+             Added include of disk_space (previously import) for disk statistics
+             Added include of system_upgrade (previously import) for upgrade module
+             Added include of system_time (previously import) for time module.
+             Added leaf under system settings for getting source ip address.
+             Added container dhcp-routes for displaying dhcp routes.
+             Added leaf under system settings-native for getting source ip";
+    }
+
+    revision 2015-11-09 {
+        description "Initial revision";
+    }
+
+    typedef passwdStr {
+        type tailf:sha-512-digest-string {
+        }
+    }
+
+    typedef ipv4-addr {
+        type union {
+            type inet:ipv4-prefix;
+            type inet:ipv4-address;
+        }
+    }
+
+    grouping ipv4 {
+        container ip {
+            description "IPV4 address configuration";
+            tailf:info "IPV4 address configuration";
+            tailf:cli-sequence-commands;
+            tailf:cli-compact-syntax;
+            tailf:cli-incomplete-command;
+            tailf:cli-full-no;
+            leaf address {
+                tailf:cli-incomplete-command;
+                mandatory true;
+                type inet:ipv4-address {
+                    tailf:info "H.H.H.H;;IP address";
+                }
+            }
+            leaf netmask {
+                tailf:cli-drop-node-name;
+                mandatory true;
+                type inet:ipv4-address {
+                    tailf:info "H.H.H.H;;IP subnet mask";
+                }
+            }
+        }
+    }
+
+    grouping ipv6 {
+        container ipv6 {
+            description "IPV6 address configuration";
+            tailf:info "IPV6 address configuration";
+            tailf:cli-sequence-commands;
+            tailf:cli-compact-syntax;
+            tailf:cli-incomplete-command;
+            choice ipv6address {
+                case ipv6-addr-case {
+                    leaf address {
+                        tailf:cli-drop-node-name;
+                        tailf:cli-incomplete-command;
+                        tailf:cli-full-no;
+                        mandatory true;
+                        type inet:ipv6-address {
+                            tailf:info "X:X:X:X::X;; IPv6 link-local address";
+                        }
+                    }
+                }
+                case ipv6-pre-case {
+                    leaf prefix {
+                        tailf:cli-drop-node-name;
+                        tailf:cli-incomplete-command;
+                        tailf:cli-full-no;
+                        mandatory true;
+                        type inet:ipv6-prefix {
+                            tailf:info "X:X:X:X::X/<0-128>;; IPv6 prefix";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    container system {
+        tailf:info "NFVIS system";
+
+        container settings {
+            description "system wide configurations";
+            tailf:info "System wide configurations";
+            uses system_logging;
+
+            leaf hostname {
+                description "hostname of the system";
+                tailf:info "hostname - must begin with alphabet; can contain alphabets, numbers and hyphen";
+                type string{
+                  length 1..24;
+                  pattern "[a-zA-Z]+[a-zA-Z0-9\-]*[a-zA-Z0-9]+";
+                }
+            }
+
+            leaf-list trusted-source {
+                tailf:info "Management trusted source IP address configuration";
+                max-elements 8;
+                type ipv4-addr;
+            }
+
+            container mgmt {
+               description "This is for lan-br IP configuration";
+               tailf:info "Management IP address configuration";
+
+               choice address-choice {
+                case fixed-case {
+                    uses ipv4;
+                }
+                /* Commenting ipv6 section, to be enabled in future
+                case ipv6-fixed-case {
+                    uses ipv6;
+                } */
+
+                case dhcp-case {
+                    leaf dhcp {
+                      tailf:info "Lan IP Address negotiated via DHCP";
+                      must "not(/system/settings/wan/dhcp != 'true')" {
+                      error-message "disable dhcp on \"wan\" to set dhcp on \"mgmt\" network";
+                      }
+                      type empty;
+                    }
+                }
+              }
+           }
+
+            container wan {
+               description "This is for wan-br configuration";
+               tailf:info "Wan NFVIS management configuration";
+               choice address-choice {
+                case fixed-case {
+                    uses ipv4;
+                }
+                /* Commenting ipv6 section, to be enabled in future
+                case ipv6-fixed-case {
+                    uses ipv6;
+                } */
+
+                case dhcp-case {
+                    leaf dhcp {
+                      tailf:info "Wan IP Address negotiated via DHCP";
+                      must "not(/system/settings/mgmt/dhcp != 'true')" {
+                      error-message "disable dhcp on \"mgmt\" to set dhcp on \"wan\" network";
+                      }
+                      type empty;
+                    }
+                }
+              }
+              container secondary {
+                  description "WAN secondary address configuration";
+                  tailf:info "WAN secondary address configuration";
+                  choice address-choice {
+                      case fixed-case {
+                          uses ipv4;
+                      }
+                      /* Commenting ipv6 section, to be enabled in future
+                      case ipv6-fixed-case {
+                          uses ipv6;
+                      } */
+                  }
+              }
+              leaf vlan {
+                  description "VLAN tag for management traffic on Wan side";
+                  tailf:info "Wan NFVIS management traffic VLAN tag";
+                  type uint16 {
+                      range "1..4094";
+                  }
+               }
+           }
+
+            leaf-list dns-server {
+                description  "ip address of the DNS server";
+                 tailf:info "List of DNS servers, max 3 can be configured";
+                 max-elements 3;
+                 type inet:ipv4-address;
+            }
+            leaf default-gw {
+                description "gateway ip address";
+                tailf:info "Default gateway";
+                must "not(/system/settings/wan/dhcp != 'true')" {
+                error-message "disable dhcp on \"wan\" to set default gateway or delete default gateway to enable dhcp";
+                }
+                must "not(/system/settings/mgmt/dhcp != 'true')" {
+                error-message "disable dhcp on \"mgmt\" to set default gateway or delete default gateway to enable dhcp";
+                }
+
+
+                type inet:ipv4-address;
+            }
+            leaf domain {
+                tailf:info "domain";
+                type inet:domain-name;
+            }
+            leaf source-interface {
+                description "Source IP address configuration for originating traffic";
+                tailf:info "Source IP address configuration for originating traffic";
+                type inet:ipv4-address {
+                    tailf:info "H.H.H.H;;IP address";
+                }
+                must "current() = /system/settings/wan/ip/address or (current() = /system/settings/mgmt/ip/address) or (current() = /system/settings/wan/secondary/ip/address)"{
+                    error-message "Use wan, mgmt or secondary ip for source";
+                }
+            }
+        }
+
+        uses system_upgrade;
+        uses system_time;
+        uses disk-space;
+        uses thread-stats;
+
+        container routes {
+            description "IP/IPV6 Route configurations";
+            tailf:info "Configure IP Routes";
+
+
+            typedef ip-address {
+                type union {
+                type inet:ipv4-address;
+                type inet:ipv6-address;
+                }
+            }
+
+            list route {
+                key "destination prefixlen";
+                leaf destination {
+                    description "Destination address";
+                    tailf:info "Destination address";
+                    must "false() = not(current() != '0.0.0.0')" {
+                        error-message "Use default-gw api to specify default route";
+                    }
+                    type ip-address;
+                }
+
+                leaf prefixlen {
+                    description "Network Prefix length";
+                    tailf:info "prefix length";
+                    must "false() = not(../gateway or ../dev)" {
+                        error-message "Please specify a gateway or device to use";
+                    }
+                    type int8;
+                }
+
+                leaf gateway {
+                    description "Gateway address";
+                    tailf:info "Destination address";
+                    type ip-address;
+                }
+
+                leaf dev {
+                    description "device";
+                    tailf:info "Outgoing Interface";
+                    type string {
+                                    pattern "[a-zA-Z0-9\-_:]*";
+                                    length 1..256;
+                                }
+                }
+
+                leaf status {
+                    description "Route create status";
+                    tailf:info "Route create status";
+                    default "Failed";
+                    tailf:callpoint system_route_status;
+                    config false;
+                    type enumeration {
+                        enum "Failed";
+                        enum "Success";
+                    }
+                }
+            }
+        }
+
+        container ports {
+           config false;
+           description "Port status";
+	   tailf:callpoint platform-detail;
+           tailf:info "List of ports status";
+           list port_detail {
+            key Name;
+            max-elements 1024;
+            description
+                "A list of all ports with details for each port";
+
+                leaf Name {
+                    type string;
+                    description
+                         "Name of the port.";
+                }
+
+                leaf Type {
+                    type string;
+                    description
+                        "Type of port.";
+                    default "Port type";
+                }
+
+		leaf Media {
+		    type string;
+		    description
+		        "Physical media of the port.";
+		    default "NA";
+		}
+
+                leaf Link {
+                    type string;
+                    description
+                        "The type of link on the port.";
+                    default "Link type";
+                }
+
+                leaf Speed {
+                    type uint32 {
+                      range "1..4294967295";
+                    }
+                    description
+                        "Speed of the port.";
+                    default "10000000";
+                }
+
+                leaf MTU {
+                    type uint64;
+                    units "bytes";
+                    description "Max MTU supported";
+                    default 1500;
+                }
+
+                leaf MAC {
+                    type string;
+                    description "The MAC address of the port";
+                    default "aaa.bbb.ccc.eee";
+                }
+
+                leaf PCI_detail {
+                    type string;
+                    description "PCI detail information";
+                    default "PCI detail";
+                }
+           }
+        }
+
+        container settings-native {
+           config false;
+           description "system wide configurations";
+           tailf:callpoint settings_detail;
+           tailf:info "List the settings";
+
+           container mgmt {
+               config false;
+               description "Management Interface Details";
+               tailf:info "Management Interface Details";
+
+               container ip-info {
+                   config false;
+                   description "List of all ip-info information";
+
+                   leaf interface {
+                       type string;
+                   }
+
+                   leaf ipv4_address  {
+                       type inet:ipv4-address;
+                   }
+
+                   leaf netmask  {
+                      type inet:ipv4-address;
+                   }
+
+
+                   leaf ipv6_address {
+                      type inet:ipv6-address;
+                   }
+
+                   leaf prefixlen {
+                       type uint8;
+                   }
+
+                   leaf mac_address {
+                       type string;
+                   }
+
+                   leaf mtu {
+                       type string;
+                   }
+
+                   leaf txqueuelen {
+                      type string;
+                  }
+
+               }
+
+              container stats {
+                  config false;
+                  description "List of all stats information";
+
+                  leaf rx_packets {
+                      type uint64;
+                  }
+
+                  leaf rx_bytes {
+                      type uint64;
+                  }
+
+                  leaf rx_errors {
+                      type uint8;
+                  }
+
+                  leaf rx_dropped {
+                      type uint8;
+                  }
+
+                  leaf rx_overruns {
+                      type uint8;
+                  }
+
+                  leaf rx_frame {
+                      type uint8;
+
+                  }
+
+                  leaf tx_packets {
+                      type uint64;
+                  }
+
+                  leaf tx_bytes {
+                      type uint64;
+
+                  }
+
+                  leaf tx_errors {
+                      type uint8;
+                  }
+
+                  leaf tx_dropped {
+                      type uint8;
+                  }
+
+                  leaf tx_overruns {
+                      type uint8;
+                  }
+
+                  leaf tx_carrier {
+                      type uint8;
+                  }
+
+                  leaf tx_collisions {
+                      type uint8;
+                  }
+              }
+
+               container dhcp {
+                   config false;
+                   description "List of all dhcp information";
+
+                   leaf enabled {
+                       type boolean;
+                   }
+
+                   leaf offer {
+                       tailf:display-when "../enabled = 'true'";
+                       type boolean;
+                   }
+
+
+                   leaf interface  {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf fixed_address {
+                        tailf:display-when "../offer = 'true'";
+                        type inet:ipv4-address;
+
+                   }
+
+                   leaf subnet_mask  {
+                      tailf:display-when "../offer = 'true'";
+                      type inet:ipv4-address;
+                   }
+
+                   leaf gateway {
+                       tailf:display-when "../offer = 'true'";
+                       type inet:ipv4-address;
+                   }
+
+                   leaf lease_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf message_type {
+                       tailf:display-when "../offer = 'true'";
+                       type uint8;
+                   }
+
+                   leaf name_servers {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf server_identifier {
+                      tailf:display-when "../offer = 'true'";
+                      type inet:ipv4-address;
+                   }
+
+
+                   leaf renewal_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf rebinding_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf vendor_encapsulated_options {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf domain_name {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+
+                   leaf renew  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+
+                   leaf rebind  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+
+                   leaf expire  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+              }
+
+           }
+
+           container wan {
+               config false;
+               description "List of all wan information";
+               tailf:info "Wan Interface Details";
+
+               container ip-info {
+                   config false;
+                   description "List of all ip-info information";
+
+                   leaf interface {
+                       type string;
+                   }
+
+                   leaf ipv4_address  {
+                      type inet:ipv4-address;
+                   }
+
+                   leaf netmask  {
+                      type inet:ipv4-address;
+                   }
+
+                   leaf ipv6_address {
+                      type inet:ipv6-address;
+                   }
+
+                   leaf prefixlen {
+                       type uint8;
+                   }
+
+                   leaf mac_address {
+                       type string;
+                   }
+
+                   leaf mtu {
+                       type string;
+                   }
+
+                   leaf txqueuelen {
+                      type string;
+                  }
+
+                  leaf secondary-ip {
+                      type inet:ipv4-address;
+                  }
+
+                  leaf secondary-ip-netmask {
+                      type inet:ipv4-address;
+                  }
+
+               }
+
+
+              container stats {
+                  config false;
+                  description "List of all stats information";
+
+                  leaf rx_packets {
+                      type uint64;
+                  }
+
+                  leaf rx_bytes {
+                      type uint64;
+                  }
+
+                  leaf rx_errors {
+                      type uint8;
+                  }
+
+                  leaf rx_dropped {
+                      type uint8;
+                  }
+
+                  leaf rx_overruns {
+                      type uint8;
+                  }
+
+                  leaf rx_frame {
+                      type uint8;
+
+                  }
+
+                  leaf tx_packets {
+                      type uint64;
+                  }
+
+                  leaf tx_bytes {
+                      type uint64;
+
+                  }
+
+                  leaf tx_errors {
+                      type uint8;
+                  }
+
+                  leaf tx_dropped {
+                      type uint8;
+                  }
+
+                  leaf tx_overruns {
+                      type uint8;
+                  }
+
+                  leaf tx_carrier {
+                      type uint8;
+                  }
+
+                  leaf tx_collisions {
+                      type uint8;
+                  }
+                }
+               container dhcp {
+                   config false;
+                   description "List of all dhcp information";
+
+                   leaf enabled {
+                       type boolean;
+                   }
+
+                   leaf offer {
+                       tailf:display-when "../enabled = 'true'";
+                       type boolean;
+                   }
+
+
+                   leaf interface  {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf fixed_address {
+                        tailf:display-when "../offer = 'true'";
+                        type inet:ipv4-address;
+
+                   }
+
+                   leaf subnet_mask  {
+                      tailf:display-when "../offer = 'true'";
+                      type inet:ipv4-address;
+                   }
+
+                   leaf gateway {
+                       tailf:display-when "../offer = 'true'";
+                       type inet:ipv4-address;
+                   }
+
+                   leaf lease_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf message_type {
+                       tailf:display-when "../offer = 'true'";
+                       type uint8;
+                   }
+
+                   leaf name_servers {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf server_identifier {
+                      tailf:display-when "../offer = 'true'";
+                      type inet:ipv4-address;
+                   }
+
+
+                   leaf renewal_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf rebinding_time {
+                       tailf:display-when "../offer = 'true'";
+                       type uint64;
+                   }
+
+                   leaf vendor_encapsulated_options {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+                   leaf domain_name {
+                       tailf:display-when "../offer = 'true'";
+                       type string;
+                   }
+
+
+                   leaf renew  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+
+                   leaf rebind  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+
+                   leaf expire  {
+                     tailf:display-when "../offer = 'true'";
+                     type yang:date-and-time;
+                   }
+              }
+
+              container vlan {
+                  config false;
+                  description "Wan NFVIS management VLAN config information";
+
+                  leaf tag {
+                      type string;
+                  }
+              }
+         }
+
+         leaf domain  {
+              tailf:info "Domain Name";
+               type inet:domain-name;
+         }
+
+
+          container dns {
+               config false;
+               description "DNS information";
+               tailf:info "DNS Details";
+
+               leaf nameserver1  {
+                   type inet:ipv4-address;
+
+
+                }
+
+               leaf nameserver2  {
+                   type inet:ipv4-address;
+
+                }
+
+               leaf nameserver3  {
+                   type inet:ipv4-address;
+
+                }
+         }
+
+
+          leaf hostname {
+              tailf:info "Hostname Details";
+              type string;
+          }
+
+
+          container gateway  {
+               config false;
+               description "List of default gateway information";
+               tailf:info "Default Gateway Details";
+
+               leaf ipv4_address  {
+                   type inet:ipv4-address;
+                }
+
+               leaf interface {
+                   type string;
+               }
+          }
+
+          leaf-list trusted-source {
+              tailf:info "Management trusted-source details";
+              max-elements 8;
+              type string;
+          }
+
+          leaf source-interface {
+              tailf:info "Source Interface Details";
+              type inet:ipv4-address;
+          }
+        }
+
+        container certificate {
+            description "certificate signing request";
+
+            tailf:action signing-request {
+                tailf:actionpoint certificate;
+                input {
+                    leaf country-code {
+                        description	"country code";
+                        type string { length 1..2; }
+                    }
+                    leaf state {
+                        description	"state";
+                        type string{ length 1..64; }
+                    }
+                    leaf locality {
+                        description	"locality";
+                        type string{ length 1..64; }
+                    }
+                    leaf organization {
+                        description	"organization";
+                        type string{ length 1..64; }
+                    }
+                    leaf organization-unit-name {
+                        description	"organization unit name";
+                        type string{ length 1..64; }
+                    }
+                    leaf common-name {
+                        description	"common name";
+                        type string{ length 1..64; }
+                        mandatory true;
+                    }
+                }
+                output {
+                    leaf url {
+                        description	"url to download cert signing request";
+                        type string;
+                    }
+                }
+            }
+
+            tailf:action install-cert {
+                tailf:actionpoint certificate;
+                input {
+                    leaf path {
+                        description	"path to the certificate";
+                        type string{ length 1..1024; }
+                        mandatory true;
+                    }
+                }
+                output {
+                }
+            }
+
+            tailf:action use-cert {
+                tailf:actionpoint certificate;
+                input {
+                    leaf cert-type {
+                        description "select certificate to use";
+                        type enumeration {
+                            enum "self-signed";
+                            enum "ca-signed";
+                        }
+                        mandatory true;
+                    }
+                }
+
+                output {
+
+                }
+            }
+        }
+
+        container processes {
+            tailf:callpoint host_processes;
+            tailf:info "List the processes";
+            description "list of processes running ";
+            config false;
+            list process {
+                key "pid";
+
+                leaf pid {
+                    description "process ID ";
+                    type string;
+                }
+
+                leaf cpu {
+                    description "process cpu-usage in %";
+                    type string;
+                }
+
+                leaf mem {
+                    description "process memory usage in %";
+                    type string;
+                }
+                leaf vsz {
+                    description "process VSZ ";
+                    type string;
+                }
+                leaf rss {
+                    description "process RSS ";
+                    type string;
+                }
+                leaf start {
+                    description "process start date ";
+                    type string;
+                }
+                leaf time {
+                    description "process start time ";
+                    type string;
+                }
+                leaf cmd {
+                    description "process cmd ";
+                    type string;
+                }
+            }
+        }
+
+        container packages {
+            tailf:callpoint host_packages;
+            tailf:info "List the packages";
+            config false;
+            description "list of packages installed ";
+            list package {
+                tailf:cli-enforce-table;
+                key "name";
+
+                leaf name {
+                    description "package name ";
+                    tailf:cli-column-width "48";
+                    type string;
+                }
+                leaf version {
+                    description "package version ";
+                    tailf:cli-column-width "32";
+                    type string;
+                }
+                leaf owner {
+                    description "package owner ";
+                    type string;
+                }
+
+            }
+        }
+
+        container services {
+            tailf:callpoint host_services;
+            tailf:info "List the services";
+            config false;
+            description "list of services ";
+            list service {
+                key "unit";
+
+                leaf unit {
+                    description "service unit ";
+                    type string;
+                }
+                leaf load {
+                    description "LOAD   = Reflects whether the unit definition was properly loaded.";
+                    type string;
+                }
+                leaf active {
+                    description "ACTIVE = The high-level unit activation state, i.e. generalization of SUB.";
+                    type string;
+                }
+                leaf sub {
+                    description "SUB    = The low-level unit activation state, values depend on unit type.";
+                    type string;
+                }
+                leaf description {
+                    description "service description ";
+                    type string;
+                }
+
+            }
+        }
+
+        container deployments {
+            description "deployed VM list";
+            tailf:info "List the deployed virtual machines";
+            tailf:callpoint host_deployment;
+            config false;
+            list deployment {
+                key "name";
+
+                leaf id {
+                    description "deployment ID ";
+                    type string;
+                }
+
+                leaf name {
+                    description "deployment name";
+                    type string;
+                }
+
+                leaf state {
+                    description "deployment state";
+                    type string;
+                }
+
+            }
+        }
+
+
+        container networks {
+            description "networks list";
+            config false;
+            tailf:callpoint networks;
+            tailf:info "List the networks";
+
+            list network {
+                key "network";
+
+                leaf network {
+                    description "network name";
+                    type string;
+                }
+
+                leaf bridge {
+                    description "bridge name";
+                    type string;
+                }
+
+                leaf ports {
+                    description "port names";
+                    type string;
+                }
+
+                leaf type {
+                    description "port type";
+                    type string;
+                }
+
+                leaf vlan {
+                    description "list of VLANs for this network";
+                    type string;
+                }
+             }
+        }
+        container monitor {
+            description "Show SPAN sessions";
+            config false;
+            tailf:callpoint span_sessions;
+            tailf:info "Show SPAN sessions";
+
+            list session {
+                tailf:info "Show SPAN session";
+                tailf:cli-suppress-table;
+                tailf:cli-show-template-legend "Note: vnic# in output below is from system, not VM cfg.\n\n";
+                key "number";
+
+                leaf number {
+                    description "SPAN session number";
+                    type string;
+                }
+                leaf bridge {
+                    description "bridge name";
+                    type string;
+                }
+
+                leaf destination_vlan {
+                    description "destination vlan";
+                    type string;
+                }
+                leaf destination_interface {
+                    description "destination interface";
+                    type string;
+                }
+
+                leaf source_vlans {
+                    description "source vlans";
+                    type string;
+                }
+                leaf source_rx_interfaces {
+                    description "source rx interfaces";
+                    type string;
+                }
+                leaf source_tx_interfaces {
+                    description "source tx interfaces";
+                    type string;
+                }
+                leaf source_all {
+                    description "source all";
+                    type string;
+                }
+                leaf statistics {
+                    description "mirror packet stats";
+                    type string;
+                }
+             }
+        }
+        container status {
+            description "status of system defaults and services";
+            config false;
+            tailf:info "system defaults and services status";
+
+            list diagnostics{
+                config false;
+                tailf:callpoint diagnostics;
+
+                key "name";
+                leaf name {
+                    description "default entity or service name";
+                    tailf:info "default entity or service name";
+                    type string;
+                }
+                leaf status {
+                    description "default entity or service status";
+                    tailf:info "default entity or service status";
+                    type string;
+                }
+                leaf type {
+                    description "type of default entity or service ";
+                    tailf:info "type of default entity or service ";
+                    type string;
+                }
+
+            }
+        }
+
+        container usb-mount {
+                tailf:info "Mount/Unmount USB drive on NFVOS";
+
+                leaf mount {
+                      description "Status of the Mount/Unmount of USB";
+                      type enumeration{
+                          enum "ACTIVE";
+                      }
+                  }
+        }
+
+        container file-list {
+              config false;
+              tailf:info "File List on local and mounted USB";
+              tailf:callpoint system_disk;
+
+              container disk {
+                  list local {
+                      key "si-no";
+
+                      leaf si-no {
+                          description "Serial Number";
+                          type uint16;
+                          tailf:cli-min-column-width 5;
+                      }
+                      leaf name {
+                          description "The name of the file";
+                          type string;
+                      }
+                      leaf path {
+                          description "Path for the file";
+                          type string;
+                      }
+                      leaf size {
+                          description "Size of the file";
+                          type string;
+                      }
+                      leaf type {
+                          description "Type of the file";
+                          type string;
+                      }
+                      leaf date-modified {
+                          description "File last modified on";
+                          type string;
+                      }
+                  }
+                  list usb {
+                      key "si-no";
+
+                      leaf si-no {
+                          description "Serial Number";
+                          type uint16;
+                          tailf:cli-min-column-width 5;
+                      }
+                      leaf name {
+                          description "The name of the file";
+                          type string; 
+                      }
+                      leaf path {
+                          description "Path for the file";
+                          type string;
+                      }
+                      leaf size {
+                          description "Size of the file";
+                          type string;
+                      }
+                      leaf type {
+                          description "Type of the file";
+                          type string;
+                      }
+                      leaf date-modified {
+                          description "File last modified on";
+                          type string;
+                      }
+                  }
+              }
+        }
+
+        container file-copy {
+                tailf:info "Copy files to NFVIS server";
+                container usb {
+                    tailf:info "Copy files from USB drive to NFVIS server";
+                    tailf:action file {
+                         tailf:info "Copy specificy file from USB drive to NFVIS server";
+                        tailf:actionpoint file_copy_action_point;
+                        input {
+                            leaf name {
+                                type string;
+                            }
+                        }
+                    }
+                }
+        }
+
+        container file-delete {
+                tailf:info "Delete local file ";
+                    tailf:action file {
+                        tailf:info "Delete local file";
+                        tailf:actionpoint file_delete_action_point;
+                        input {
+                            leaf name {
+                                type string;
+                            }
+                        }
+                    }
+        }
+
+
+        list ext-disks {
+            config false;
+            tailf:info "List of external Disks";
+            tailf:callpoint system_ext_disk;
+            key name;
+            leaf name {
+                          description "The name of external disk";
+                          type string {
+                                              pattern "[a-zA-Z0-9\-_]*";
+                                              length 1..256;
+                                      }
+                      }
+        }
+
+        typedef loggingLevel {
+            type enumeration {
+                enum "debug";
+                enum "info";
+                enum "warning";
+                enum "error";
+                enum "critical";
+            }
+            description "Log levels: debug, info, warning, error, critical";
+        }
+
+        typedef loggingType {
+            type enumeration {
+                enum "configuration";
+                enum "operational";
+                enum "all";
+            }
+            description "Log File types: configuration, operational, all";
+        }
+
+        //For system set-log level [debug|info|warning|error|critical] logtype [all|configuration|operational]
+        tailf:action set-log {
+            tailf:actionpoint loglevel_action;
+            tailf:info "Set Log level";
+            input {
+                leaf logtype {
+                    description "select log type";
+                    tailf:info "configuration/operational/all";
+                    type loggingType;
+                    mandatory true;
+                }
+
+                leaf level {
+                    description "select level to use";
+                    tailf:info "debug/info/warning/error/critical";
+                    type loggingLevel;
+                    mandatory true;
+                }
+            }
+            output {
+            }
+        }
+
+        // For storing the loglevel for other processes
+        container loglevel {
+            config false;
+            tailf:cdb-oper;
+            tailf:hidden full;
+
+            leaf config-log-level {
+                type string;
+                default "INFO";
+            }
+            leaf operational-log-level {
+                type string;
+                default "WARNING";
+            }
+        }
+
+        //For show system logging-level [configuration | operational | <cr>]
+        container logging-level {
+            config false;
+            tailf:callpoint system_loglevel;
+            tailf:info "List the logging levels";
+
+            leaf configuration {
+                description "Show log level for config log";
+                tailf:code-name "config";
+                tailf:info "Log level for configuration log";
+                type loggingLevel;
+            }
+            leaf operational {
+                description "Show log level for operational log";
+                tailf:code-name "oper";
+                tailf:info "Log level for operational log";
+                type loggingLevel;
+            }
+        }
+        container usb {
+                tailf:info "Mount the USB device ";
+                tailf:hidden full;
+                tailf:action mount {
+                    tailf:info "Mount the USB devices connected";
+                    tailf:actionpoint usb_action_point;
+                }
+                tailf:action unmount {
+                    tailf:info "Un-Mount the USB devices connected";
+                    tailf:actionpoint usb_action_point;
+                }
+                list mnt-info {
+                config false;
+                tailf:info "List of the USB devices connected and their mount points";
+                tailf:callpoint usb_status;
+                leaf name {
+                    description "The name of the usb device";
+                    type string;
+                    }
+                leaf mount-point {
+                    description "Mount point of the USB";
+                    type string;
+                    }
+                }
+        }
+
+        container portal {
+            tailf:info "Portal related configuration";
+
+            typedef portal_access_flag {
+                description "Control flag to enable or disable portal access";
+                type enumeration {
+                    enum "enabled";
+                    enum "disabled";
+                }
+            }
+
+            leaf access {
+                tailf:info "Portal access configuration";
+                default "enabled";
+                type portal_access_flag ;
+            }
+
+            leaf status {
+                tailf:info "Portal status";
+                tailf:callpoint system_portal_status;
+                config false;
+                type string;
+            }
+        }
+
+        container dhcp-routes {
+            description "IP Route List for DHCP added routes";
+            tailf:info "Display DHCP added static Routes";
+            config false;
+            tailf:callpoint system_dhcp_routes;
+
+            typedef ip-address {
+                type inet:ipv4-address;
+            }
+
+            list route {
+                key "destination prefixlen";
+                leaf destination {
+                    description "Destination address";
+                    tailf:info "Destination address";
+                    type ip-address;
+                }
+
+                leaf prefixlen {
+                    description "Network Prefix length";
+                    tailf:info "Prefix length";
+                    type int8 {
+                        range "1..32";
+                    }
+                }
+
+                leaf gateway {
+                    description "Gateway address";
+                    tailf:info "Gateway address";
+                    type ip-address;
+                }
+
+                leaf dev {
+                    description "device";
+                    tailf:info "Outgoing Interface";
+                    type string {
+                        pattern "[a-zA-Z0-9\-_:]*";
+                        length 1..256;
+                    }
+                }
+            }
+        }
+    }
+}

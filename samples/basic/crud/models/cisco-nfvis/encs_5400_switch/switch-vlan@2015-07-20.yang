@@ -1,0 +1,195 @@
+submodule switch-vlan {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'vlan' component provides VLAN command configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping vlan-cmd {
+    list vlan {
+      tailf:cli-mode-name "config-switch-vlan";
+      tailf:info "VLAN commands";
+      //tailf:cli-custom-range-actionpoint "vlan-range" {
+      //    tailf:cli-completion-id idd;
+      //}
+      tailf:cli-custom-range-enumerator "vlan-enum" {
+          tailf:cli-completion-id ide;
+      }
+      key "vlan-id";
+      leaf vlan-id {
+        tailf:cli-incomplete-no;
+        //tailf:cli-suppress-range;
+        //tailf:cli-custom-range {
+        //  tailf:cli-range-type "vlan-type";
+        //}
+        type vlan-type;
+      }
+      container detailed {
+        config false;
+        tailf:callpoint cp-vlan-detail;
+        tailf:info "Display VLAN information";
+        leaf vlan {
+          type string;
+        }
+        leaf name {
+          type string;
+        }
+        leaf tagged-ports {
+          type string;
+        }
+        leaf untagged-ports {
+          type string;
+        }
+        leaf created-by {
+          type string;
+        }
+      }
+//      container private-vlan {
+//        config false;
+//        tailf:callpoint cp-private-vlan;
+//        tailf:info "Private VLAN";
+//        leaf Primary {
+//          tailf:cli-drop-node-name;
+//          type uint16;
+//        }
+//        leaf Secondary {
+//          tailf:cli-drop-node-name;
+//          type uint16;
+//        }
+//        leaf Type {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf Port {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//      }
+//      container name {
+//        config false;
+//        tailf:callpoint cp-vlan-name;
+//        tailf:info "Display by VLAN name";
+//        leaf vlan {
+//          tailf:cli-drop-node-name;
+//          type uint16;
+//        }
+//        leaf name {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf tagged-ports {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf untagged-ports {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf created-by {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//      }
+//      container tag {
+//        config false;
+//        tailf:callpoint cp-vlan-tag;
+//        tailf:info "Display by VLAN tag";
+//        leaf vlan {
+//          tailf:cli-drop-node-name;
+//          type uint16;
+//        }
+//        leaf vlan-name {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf tagged-ports {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf untagged-ports {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//        leaf created-by {
+//          tailf:cli-drop-node-name;
+//          type string;
+//        }
+//      }
+//      container internal {
+//        config false;
+//        tailf:callpoint cp-internal-vlan;
+//        tailf:info "internal";
+//        container usage {
+//          tailf:info "usage";
+//          leaf vlan {
+//            tailf:cli-drop-node-name;
+//            type string;
+//          }
+//          leaf usage {
+//            tailf:cli-drop-node-name;
+//            type string;
+//          }
+//        }
+//      }
+    }
+  }
+}
+//      container private-vlan {
+//        tailf:info "Configure a private VLAN";
+//        container association {
+//          tailf:info "Configure association between private VLANs";
+//            choice vlan-choice {
+//              leaf-list add {
+//                tailf:cli-full-command;
+//                tailf:cli-range-list-syntax;
+//                tailf:info " add VLANs to the current list";
+//                type vlan-type;
+//              }
+//              leaf-list ids {
+//                tailf:cli-full-command;
+//                tailf:cli-drop-node-name;
+//                tailf:cli-range-list-syntax;
+//                type vlan-type;
+//              }
+//              leaf-list remove {
+//                tailf:cli-full-command;
+//                tailf:cli-range-list-syntax;
+//                tailf:info " remove VLANs from the current list";
+//                type vlan-type;
+//              }
+//          }
+//        }
+//        leaf isolated {
+//          tailf:cli-full-command;
+//          tailf:info "Configure the VLAN as a isolated private VLAN";
+//          type empty;
+//        }
+//        leaf community {
+//          tailf:cli-full-command;
+//          tailf:info "Configure the VLAN as a community private VLAN";
+//          type empty;
+//        }
+//        leaf primary {
+//          tailf:cli-full-command;
+//          tailf:info "Configure the VLAN as a primary pricate VLAN";
+//          type empty;
+//        }
+//      }

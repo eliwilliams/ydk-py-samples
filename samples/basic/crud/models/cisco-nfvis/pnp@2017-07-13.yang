@@ -1,0 +1,185 @@
+module pnp {
+    namespace "http://www.cisco.com/nfv/pnp";
+    prefix "pnp";
+
+    import ietf-inet-types {
+       prefix inet;
+    }
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "pnp configuration";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-07-13 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Added tailf:cli extensions to force complete
+             entry of static container";
+    }
+
+    revision 2015-11-19 {
+        description "Initial revision";
+    }
+
+    container pnp {
+        description "pnp configurations";
+        tailf:info "Display pnp current configuration";
+        container static {
+            description "Static pnp discovery policy";
+            tailf:info "Static pnp discovery";
+            tailf:cli-sequence-commands;
+            tailf:cli-compact-syntax;
+            leaf ip-address {
+                description	"ip address of pnp server";
+                tailf:info "ip address of pnp server";
+                tailf:cli-incomplete-command;
+                type inet:ipv4-address;
+            }
+
+            leaf port {
+                description	"port of pnp server";
+                tailf:info "port of pnp server";
+                tailf:cli-incomplete-command;
+                type inet:port-number;
+            }
+
+            container transport {
+                description "http or https transport";
+                tailf:info "transport type http/https";
+                tailf:cli-incomplete-command;
+                choice transport-choice {
+                case http {
+                leaf http {
+                    description "Transport type http";
+                    tailf:info "Transport type http";
+                    type empty;
+                }
+                }
+                case https {
+                container https {
+                        description "Transport type https";
+                        tailf:info "Transport type https";
+                        leaf cafile {
+                                    description "Location of the CA file in local disk";
+                                    tailf:info "Input the complete path of the CA file <default:/etc/pnp/certs/>";
+                                    type string;
+
+                        }
+
+                    }
+                }
+            }
+            }
+        }
+
+        container automatic {
+            description "automatic pnp discovery policy";
+            tailf:info "Automatic pnp discovery";
+            leaf dhcp {
+                description "DHCP option 43 enable/disable";
+                tailf:info "Enable/disable DHCP option 43";
+                default "enable";
+                type enumeration {
+                    enum "enable";
+                    enum "disable";
+                }
+            }
+            leaf dns {
+                description "DNS enable/disable";
+                tailf:info "Enable/disable DNS";
+                default "enable";
+                type enumeration {
+                    enum "enable";
+                    enum "disable";
+                }
+            }
+            leaf cco {
+                description "Cloud redirect enable/disable";
+                tailf:info "Enable/disable CCO";
+                default "enable";
+                type enumeration {
+                    enum "enable";
+                    enum "disable";
+                }
+            }
+
+            leaf timeout {
+                description "Retry timeout";
+                tailf:info "Policy discovery retry timeout in seconds";
+                default "60";
+                type uint32 {
+                    range "30..300";
+                }
+            }
+        }
+
+        tailf:action action {
+            tailf:actionpoint action_info;
+            input {
+                leaf command {
+                    description "PnP Action Command";
+                    type enumeration {
+                        enum "stop";
+                        enum "start";
+                        enum "restart";
+                    }
+                }
+            }
+            output {
+            }
+        }
+
+        container status {
+            config false;
+            tailf:callpoint status;
+
+            leaf response {
+                type string;
+                description "Response returned from pnp status command";
+            }
+            leaf ip-address {
+                description "ip address of pnp server";
+                type string;
+            }
+            leaf port {
+                description "port";
+                type string;
+            }
+            leaf transport {
+                description "transport";
+                type string;
+            }
+            leaf cafile {
+                description "cafile";
+                type string;
+            }
+            leaf created_by {
+                description "discovery mechanism which configured PNP profile";
+                type string;
+            }
+            leaf dhcp_opt43 {
+                description "dhcp option 43";
+                type string;
+            }
+            leaf dns_discovery {
+                description "dns discovery";
+                type string;
+            }
+            leaf cco_discovery {
+                description "cco discovery";
+                type string;
+            }
+            leaf timeout {
+                description "Retry timeout";
+                type string;
+            }
+        }
+    }
+}

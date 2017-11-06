@@ -1,0 +1,156 @@
+module resources {
+    namespace "http://www.cisco.com/nfvis/resources";
+    prefix "resource-info";
+
+    import tailf-common { prefix tailf; }
+    import ietf-yang-types { prefix yang; }
+
+    organization "Cisco Systems, Inc.";
+    description
+        "This module contains a collection of YANG definitions
+         for resources information for VNFs";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2016-06-22 {
+        description "Proposed";
+    }
+
+    container resources {
+	tailf:info "Display resources (CPU) information";
+        container precheck {
+            description "Pre deployment check if there are sufficient resources given VNF flavor";
+            tailf:info "Check if there are sufficient resources for deploying VNF";
+            config false;
+            tailf:callpoint resources_precheck;
+            list vnf {
+                tailf:info "Input <vnf_name> <flavor_name> <low-latency true or false>";
+                min-elements 1;
+                max-elements 1;
+
+                key "vnf-name flavor-name low-latency";
+
+                leaf vnf-name {
+                    description "VNF name in format deployment_name.vm_group_name";
+                    type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                }
+
+                leaf flavor-name {
+                    description "Flavor name";
+                    type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                }
+
+                leaf low-latency {
+                    description "true or flase if VNF is low-latency type";
+                    type boolean;
+                }
+
+                leaf sufficient-resources {
+                    type boolean;
+                }
+                leaf cause {
+                    type string;
+                }
+            }
+        }
+
+        grouping vnfinfo {
+            leaf name {
+                description "VNF name: <deployment_name>.<vm_group_name>";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            leaf vcpus {
+                description "number of vcpus";
+                type uint8;
+            }
+            leaf low-latency {
+                type boolean;
+            }
+        }
+
+        grouping cpuinfo {
+            leaf socket-id {
+                type uint8;
+            }
+            leaf core-id {
+                type uint8;
+            }
+            leaf cpu-id {
+                type uint8;
+            }
+        }
+
+        container cpu-info {
+            description "Display cpu allocation info";
+            tailf:info "Display cpu allocation info";
+
+            container cpus {
+                config false;
+                tailf:info "Display VNFs on CPU";
+                tailf:callpoint resources_by_cpus;
+
+                list cpu {
+                    uses cpuinfo;
+                    key "cpu-id";
+
+                    leaf system-use {
+                        type boolean;
+                    }
+
+                    list vnf {
+                        uses vnfinfo;
+                        leaf vcpu-id {
+                            type string;
+                        }
+                    }
+                }
+            }
+
+            container vnfs {
+                config false;
+                tailf:info "Display CPUs pinned by VNF";
+                tailf:callpoint "resources_by_vnfs";
+
+                list vnf {
+                    key "name";
+                    uses vnfinfo;
+
+                    list cpu {
+                        leaf vcpu-id {
+                            type string;
+                        }
+                        uses cpuinfo;
+                    }
+                }
+            }
+
+            container allocation {
+                config false;
+                tailf:info "Display CPU alloation for VNFs";
+                tailf:callpoint "resources_cpu_alloc";
+
+                leaf total-sockets {
+                    type uint8;
+                }
+                leaf cores-per-socket {
+                    type uint8;
+                }
+                leaf total-logical-cpus {
+                    type uint8;
+                }
+                leaf logical-cpus-used-by-system {
+                    type uint8;
+                }
+                leaf logical-cpus-used-by-vnfs {
+                    type uint8;
+                }
+                leaf logical-cpus-used-dedicated {
+                    type uint8;
+                }
+                leaf logical-cpus-used-sharable {
+                    type uint8;
+                }
+            }
+        }
+    }
+}

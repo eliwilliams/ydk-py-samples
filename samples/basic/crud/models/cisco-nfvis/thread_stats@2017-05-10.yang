@@ -1,0 +1,99 @@
+submodule thread_stats {
+
+    belongs-to system {
+        prefix "thread_stats";
+    }
+
+    import ietf-inet-types { prefix inet; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Thread statistics";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-10 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Initial revision";
+    }
+
+    grouping thread-transaction-timestamp {
+        leaf transaction-num {
+            description "Transaction number";
+            type uint64;
+        }
+        leaf start-timestamp {
+            description "Start timestamp";
+            type string;
+        }
+        leaf end-timestamp {
+            description "End timestamp";
+            type string;
+        }
+    }
+
+    grouping thread-stats {
+        container thread-stats {
+            description "Thread Statistics for all threads running under nfvos-confd service";
+            tailf:info "Thread Statistics for all threads running under nfvos-confd service";
+            config false;
+            tailf:callpoint thread_stats;
+
+              list thread-info {
+                tailf:cli-drop-node-name;
+                key thread-name;
+                description "Information about a particular thread";
+                tailf:info "Information about a particular thread";
+
+                leaf thread-name {
+                    description "Thread name";
+                    tailf:info "Thread name";
+                    type string;
+                }
+                leaf thread-id {
+                    description "Associated Thread Id";
+                    tailf:info "Associated Thread Id";
+                    type string;
+                }
+                leaf restart-count {
+                    description "Number of thread restarts";
+                    tailf:info "Number of thread restarts";
+                    type uint64;
+                }
+                leaf wake-up-count {
+                    description "Number of times the thread woke up for a transaction";
+                    tailf:info "Number of times the thread woke up for a transaction";
+                    type uint64;
+                }
+                leaf total-exec-time-in-seconds {
+                    description "Total exec time";
+                    tailf:info "Total exec time";
+                    type string;
+                }
+                leaf max-exec-time-in-seconds {
+                    description "Maximum execution time for a transaction";
+                    tailf:info "Maximum execution time for a transaction";
+                    type string;
+                }
+                leaf min-exec-time-in-seconds {
+                    description "Minimum execution time for a transaction";
+                    tailf:info "Minimum execution time for a transaction";
+                    type string;
+                }
+                list history-exec-time {
+                    description "Last 10 execution time for a transaction";
+                    tailf:info "Last 10 execution time for a transaction";
+                    key transaction-num;
+                    max-elements 10;
+                    uses thread-transaction-timestamp;
+                }
+            }
+        }
+    }
+}

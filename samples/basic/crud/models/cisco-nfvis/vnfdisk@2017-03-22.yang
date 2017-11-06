@@ -1,0 +1,77 @@
+submodule vnfdisk {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    import tailf-common { prefix tailf; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import utilization_common {prefix "utilization_common"; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "VNF disk module";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemvnfdisk{
+        container disk {
+            config false;
+
+            container stats {
+                tailf:callpoint vnfdisk_oper;
+                config false;
+                description "VNF Disk operation statistics";
+
+                list disk-operations {
+                    uses utilization_common:request_time_info;
+                    key "duration";
+                    max-elements 1;
+
+                    list vnf {
+                        uses utilization_common:collect_time_info;
+                        key "name";
+
+                        leaf name {
+                            description "Name of the vnf";
+                            type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                        }
+
+                        list disk {
+                            leaf disk-name {
+                                type string;
+                                description "Name of the disk or disk partition";
+                            }
+
+                            leaf bytes-read-per-sec {
+                                type string;
+                                units "Bytes/s";
+                            }
+                            leaf bytes-written-per-sec {
+                                type string;
+                                units "Bytes/s";
+                            }
+                            leaf reads-per-sec {
+                                type string;
+                                units "Ops/s";
+                            }
+                            leaf writes-per-sec {
+                                type string;
+                                units "Ops/s";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

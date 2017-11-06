@@ -1,0 +1,124 @@
+submodule hostcpu {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    import tailf-common { prefix tailf; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import utilization_common {prefix "utilization_common"; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Host CPU details for NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemcpu {
+        container cpu {
+            config false;
+
+            container stats {
+                tailf:callpoint hostcpu;
+                config false;
+                description
+                    "CPU utilization per CPU state";
+
+                list cpu-usage {
+                    uses utilization_common:request_time_info;
+                    uses utilization_common:collect_time_info;
+
+                    key "duration state";
+
+                    // Allow 1 state per query for now
+                    // Default is non-idle state
+                    max-elements 1;
+
+                    leaf state {
+                        tailf:cli-expose-key-name;
+                        tailf:info "/interrupt/nice/system/user/wait";
+                        type enumeration {
+                            enum non-idle;
+                            enum interrupt;
+                            enum nice;
+                            enum system;
+                            enum user;
+                            enum wait;
+                        }
+                        description
+                            "CPU state: non-idle, interrupt, nice, softirq,
+                                        system, user, wait";
+                    }
+
+                    list cpu {
+                        description
+                            "CPU utilization for a given state";
+
+                        leaf id {
+                            type uint8;
+                            tailf:info "Logical CPU ID";
+                            description
+                                "CPU core id";
+                        }
+                        leaf usage-percentage {
+                            tailf:info "Array of logical CPU usage in %";
+                            type string;
+                            description
+                                "an array of cpu utilization percent data.
+                                 e.g. [58.23, 57.34, ...]";
+                        }
+                    }
+
+                }
+            }
+
+            container table {
+                config false;
+                tailf:callpoint hostcpu_table;
+
+                list cpu-usage {
+                    uses utilization_common:request_time_info;
+
+                    key "duration";
+                    max-elements 1;
+
+                    list cpu {
+                        description
+                            "CPU statistics";
+
+                        leaf id {
+                            type uint8;
+                        }
+
+                        list states {
+                            description
+                                "CPU statistics for CPU state";
+
+                            leaf state {
+                                type string;
+                            }
+                            leaf min-percentage {
+                                type string;
+                            }
+                            leaf max-percentage {
+                                type string;
+                            }
+                            leaf average-percentage {
+                                type string;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

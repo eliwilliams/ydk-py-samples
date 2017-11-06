@@ -1,0 +1,225 @@
+submodule switch-dot1x {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'dot1x' component provides 802.1x support for configuring switch
+     device.";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping ieee-802-1x {
+    container authentication {
+      tailf:info "Specify authentication method";
+      leaf default {
+        tailf:info "Set default authentication method";
+        tailf:cli-full-command;
+        type enumeration {
+//          enum "both" {
+//            tailf:hidden full;
+//            tailf:code-name default-both;
+//            tailf:info "Use both methods";
+//            value 1;
+//          }
+          enum "radius" {
+            tailf:code-name default-radius;
+            tailf:info "Use Radius Server";
+            value 2;
+          }
+          enum "none" {
+            tailf:code-name default-none;
+            tailf:info "Use None";
+            value 3;
+          }
+        }
+        default "radius";
+      }
+    } 
+    leaf system-auth-control {
+      tailf:info "Enable or Disable SysAuthControl";
+      tailf:cli-full-command;
+      type empty;
+    }
+    container guest-vlan {
+      tailf:info "Configure guest VLAN timeout value";
+      leaf timeout {
+        tailf:info "timeout value";
+        type uint8 {
+          range "30..180";
+          tailf:info "<30-180>;;  vlaue in seconds";
+        }
+      }
+    }
+  }
+
+  grouping dot1x-cmd {
+    container dot1x {
+      tailf:info "Specify which servers are used for authentication"
+                 + " when 802.1X authentication is enabled";
+      uses ieee-802-1x;
+      container summary {
+        config false;
+        tailf:info "Display dot1x summary";
+        tailf:callpoint cp-dot1x-summary;
+        leaf authentication-mode {
+          type string;
+        }
+        leaf authentication-method {
+          type string;
+        }
+        leaf Unauthentication-VLANs {
+          type string;
+        }
+        leaf authentication-failure-traps {
+          type string;
+        }
+        leaf authentication-success-traps {
+          type string;
+        }
+      }
+      container interface {
+        config false;
+        tailf:callpoint cp-dot1x-interface;
+        tailf:info "Specify an interface ID";
+        list gigabitEthernet {
+          key name;
+          leaf name {
+            type ge-interface-type;
+          }
+          leaf host-mode {
+            type string;
+          }
+          leaf port-admin-status {
+            type string;
+          }
+          leaf guest-vlan {
+            type string;
+          }
+          leaf open-access {
+            type string;
+          }
+          leaf server-timeout {
+            type uint16;
+          }
+          leaf port-oper-status {
+            type string;
+          }
+          leaf reauthentication {
+            type string;
+          }
+          leaf reauthentication-timeout {
+            type uint64;
+          }
+          leaf quiet-period {
+            type uint16;
+          }
+          leaf auth-tx-period {
+            type uint16;
+          }
+          leaf auth-supplicant-timeout {
+            type uint16;
+          }
+          leaf max-req {
+            type uint8;
+          }
+          leaf auth-failure-count {
+            type uint32;
+          }
+          leaf auth-success-count {
+            type uint32;
+          }
+        }
+      }
+      container statistics {
+        config false;
+        tailf:callpoint cp-dot1x-stat;
+        tailf:info "Display 802.1x statistics";
+        list gigabitEthernet {
+          key name;
+          leaf name {
+            type ge-interface-type;
+          }
+          leaf EapolFramesRx {
+            type uint64;
+          }
+          leaf EapolFramesTx {
+            type uint64;
+          }
+          leaf EapolStartFramesRx {
+            type uint64;
+          }
+          leaf EapolLogoffFramesRx {
+            type uint64;
+          }
+          leaf EapolRespIdFramesRx {
+            type uint64;
+          }
+          leaf EapolRespFramesRx {
+            type uint64;
+          }
+          leaf EapolReqIdFramesTx {
+            type uint64;
+          }
+          leaf EapolReqFramesTx {
+            type uint64;
+          }
+          leaf InvalidEapolFramesRx {
+            type uint64;
+          }
+          leaf EapLengthErrorFramesRx {
+            type uint64;
+          }
+          leaf LastEapolFrameVersion {
+            type uint64;
+          }
+          leaf LastEapolFrameSource {
+            type string;
+          }
+        }
+      }
+      list users {
+        config false;
+        tailf:callpoint cp-dot1x-user;
+        tailf:info "Display active 802.1 authenticated users";
+        key port;
+        leaf port {
+          type ge-interface-type;
+        }
+        leaf username {
+          type string;
+        }
+        leaf mac-address {
+          type string;
+        }
+        leaf auth-method {
+          type string;
+        }
+        leaf auth-server {
+          type string;
+        }
+        leaf session-time {
+          type string;
+        }
+        leaf vlan {
+          type string;
+        }
+      }
+    }
+  }
+}

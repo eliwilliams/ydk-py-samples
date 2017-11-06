@@ -1,0 +1,400 @@
+module snmp {
+    namespace "http://www.cisco.com/nfvis/snmp";
+    prefix "nfvis-snmp";
+
+    import tailf-common {
+        prefix tailf;
+    }
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    import ietf-inet-types {
+        prefix inet;
+    }
+
+    import SNMP-FRAMEWORK-MIB {
+        prefix SNMP-FRAMEWORK-MIB;
+    }
+
+    import SNMPv2-MIB {
+        prefix SNMPv2-MIB;
+    }
+
+    import SNMPv2-TC {
+        prefix SNMPv2_TC;
+    }
+
+    import SNMP-TARGET-MIB {
+        prefix SNMP-TARGET-MIB;
+    }
+
+    import SNMP-NOTIFICATION-MIB {
+        prefix SNMP-NOTIFICATION-MIB;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "SNMP module for NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-25 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Initial version.";
+    }
+
+    //EXPORT = --export maapi while generating the snmp yangs
+    typedef stringname {
+        tailf:info "string format [special characters allowed _- (Max Size 32)]";
+        type string {
+            length 1..32;
+            pattern "[A-Za-z0-9_-]+";
+        }
+    }
+
+    typedef trap-state-enum {
+        type enumeration {
+            enum linkUp;
+            enum linkDown;
+        }
+    }
+
+    container snmp {
+        description " SNMP configuration.  ";
+        tailf:info "SNMP configuration";
+
+        container agent {
+            description " SNMP agent configuration.  ";
+            tailf:callpoint snmp_agent_config {
+                tailf:transaction-hook subtree;
+            }
+            leaf enabled {
+                config false;
+                type boolean;
+                default true;
+            }
+            leaf sysDescr {
+              config false;
+              type string;
+              tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysDescr";
+            }
+            leaf sysName {
+                type string;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysName";
+            }
+            leaf sysOID {
+              config false;
+              type yang:object-identifier;
+              tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysObjectID";
+            }
+            leaf engineID {
+              type string {
+                  pattern "((00:00:00:09:)((([0-9A-Fa-f]{2}):){7})([0-9A-Fa-f]{2}))";
+                  length "35";
+              }
+              tailf:info "<Enter 12 octets, first 4 must be 00:00:00:09>";
+              default "00:00:00:09:00:00:06:03:09:0E:A5:BD";
+              tailf:cli-show-with-default;
+            }
+        }
+
+        container communities {
+            tailf:cli-drop-node-name;
+            tailf:callpoint snmp_community_config {
+                tailf:transform true;
+            }
+            list community {
+                description "
+                  SNMP community configuraton.
+                  ";
+                max-elements 10;
+                key community-name;
+                leaf community-name {
+                    type string;
+                    description "SNMP community name";
+                }
+              must "(/snmp/agent/engineID)" {
+                  tailf:dependency "/snmp/agent/engineID";
+                  error-message "EngineID is mandatory";
+              }
+              leaf community-access {
+                  type SNMPv2_TC:StorageType;
+                  default readOnly;
+                  description "SNMP access type";
+              }
+            }
+        }
+
+        container groups {
+            tailf:cli-drop-node-name;
+            tailf:callpoint snmp_group_config {
+                tailf:transform true;
+            }
+            list group {
+                description "
+                    SNMP group configuration.
+                     ";
+                max-elements 10;
+                key "group-name group-context-prefix group-version security-level";
+                leaf group-name {
+                    type stringname;
+                    description "SNMP group name";
+                    must "(/snmp/agent/engineID)" {
+                        tailf:dependency "/snmp/agent/engineID";
+                        error-message "EngineID is mandatory";
+                    }
+                }
+                leaf group-context-prefix {
+                    type string {
+                        length min..32;
+                    }
+                    tailf:info "SNMP group context prefix ;; must be set to snmp for v1/v2c, use \"\" to configure null context for v3";
+                    description "SNMP group context prefix. Should be set to snmp";
+                }
+                leaf group-version {
+                    type int32 {
+                        range "1..3";
+                     }
+                     description "SNMP version";
+                     tailf:info "SNMP version <Enter 1 for v1, 2 for v2c, 3 for v3>";
+                }
+                leaf security-level {
+                    type SNMP-FRAMEWORK-MIB:SnmpSecurityLevel;
+                    description "SNMP security level config";
+                    tailf:info "<Enter noAuthNoPriv/authNoPriv/authPriv>";
+                }
+                leaf read {
+                    type string;
+                    description "SNMP read view";
+                }
+                leaf write {
+                    type string;
+                    description "SNMP write view";
+                }
+                leaf notify {
+                    type string;
+                    description "SNMP notify view";
+                }
+            }
+        }
+
+        container users {
+            tailf:cli-drop-node-name;
+            tailf:callpoint snmp_user_config {
+                tailf:transform true;
+            }
+            list user {
+                description "
+                    SNMP user configuration.
+                    ";
+                max-elements 10;
+                key "user-name";
+                leaf user-name {
+                    type string;
+                    must "(/snmp/agent/engineID) and (../user-version) and (../user-group)" {
+                        tailf:dependency "../user-version";
+                        tailf:dependency "../user-group";
+                        tailf:dependency "/snmp/agent/engineID";
+                          error-message "EngineID, Version and Group are mandatory";
+                    }
+                    description "SNMP user name";
+                }
+                leaf user-version {
+                   type int32 {
+                       range "1..3";
+                   }
+                   tailf:cli-suppress-no;
+                   description "SNMP version";
+                   tailf:info "SNMP version <Enter 1 for v1, 2 for v2c, 3 for v3>";
+                }
+                leaf user-group {
+                    type string;
+                    tailf:cli-suppress-no;
+                    description "SNMP group name";
+                }
+                leaf auth-protocol {
+                    type string {
+                        pattern "(md5)|(sha)";
+                        length 3;
+                        tailf:info "<Enter md5 or sha>";
+                    }
+                    description "Authentication based on MD5 or SHA";
+                    tailf:info "<Enter md5 or sha>";
+                    must "(../passphrase) or (../auth-key) or (../priv-key)" {
+                        tailf:dependency "../passphrase";
+                        tailf:dependency "../auth-key";
+                        tailf:dependency "../priv-key";
+                        error-message "Passphrase/auth-key/priv-key is required for auth protocol";
+                    }
+                }
+                leaf priv-protocol {
+                    type string {
+                        pattern "(aes)|(des)";
+                        length 3;
+                        tailf:info "<Enter aes or des>";
+                    }
+                    description "Encryption based on AES or DES";
+                    tailf:info "<Enter aes or des>";
+                    must "(../auth-protocol = 'md5') or (../auth-protocol = 'sha')" {
+                        tailf:dependency "../auth-protocol";
+                        error-message "auth-protocol is required for priv protocol";
+                    }
+                }
+                leaf passphrase {
+                    type string {
+                        pattern "[A-Za-z0-9 ]+";
+                    }
+                    must "(../auth-protocol = 'md5') or (../auth-protocol = 'sha') or (../priv-protocol = 'des') or (../priv-protocol = 'aes') or
+                    (../auth-key) or (../priv-key)" {
+                        tailf:dependency "../auth-protocol";
+                        tailf:dependency "../priv-protocol";
+                        tailf:dependency "../auth-key";
+                        tailf:dependency "../priv-key";
+                         error-message "Passphrase not required for noAuthNoPriv";
+                     }
+                     description "Enter passphrase";
+                     tailf:info "<Enter passphrase-allowed character string [A-Za-z0-9 ]";
+                }
+                leaf auth-key {
+                    type     tailf:hex-list;
+                    description "SNMP auth-key";
+                    tailf:info "<Enter hex auth-key>";
+                }
+                leaf priv-key {
+                    type     tailf:hex-list;
+                    description "SNMP priv-key";
+                    tailf:info "<Enter hex priv-key>";
+                }
+            }
+        }
+
+        container hosts {
+            tailf:cli-drop-node-name;
+            tailf:callpoint snmp_host_config {
+                tailf:transform true;
+            }
+            list host {
+                description "
+                   SNMP client hosts.
+                   ";
+                max-elements 4;
+                key host-name;
+                leaf host-name {
+                tailf:info "Host name";
+                type stringname;
+                must "((../host-ip-address) and (../host-security-level) and (../host-version) and (../host-user-name))" {
+                    tailf:dependency "../host-ip-address";
+                    tailf:dependency "../host-security-level";
+                    tailf:dependency "../host-version";
+                    tailf:dependency "../host-user-name";
+                    error-message "Must enter ip-address, security-level, version and user-name";
+                }
+            }
+                leaf host-port {
+                    tailf:info "Optional destination port number (default 162)";
+                    type inet:port-number;
+                    default 162;
+                }
+                leaf host-ip-address {
+                    tailf:info "IP address of the SNMP client/manager";
+                    type inet:ipv4-address;
+                }
+                leaf host-version {
+                    tailf:info "SNMP version <Enter 1 for v1, 2 for v2c, 3 for v3>";
+                    type int32 {
+                        range "1..3";
+                    }
+                }
+                leaf host-security-level {
+                    tailf:info "SNMP security level";
+                    type SNMP-FRAMEWORK-MIB:SnmpSecurityLevel;
+                }
+                leaf host-user-name {
+                    tailf:info "SNMP User/Community name";
+                    type SNMP-FRAMEWORK-MIB:SnmpAdminString;
+                }
+            }
+        }
+
+        container traps {
+            config false;
+            tailf:cdb-oper {
+                tailf:persistent true;
+            }
+            list trap-list {
+                key trap-name;
+                leaf trap-name {
+                    type SNMP-NOTIFICATION-MIB:snmpNotifyNameType;
+                }
+                leaf trap-state {
+                    type string;
+                    default "disabled";
+                }
+            }
+        }
+
+        container enable {
+            container traps {
+                tailf:callpoint configure_trap {
+                    tailf:transaction-hook subtree;
+                }
+               leaf-list trap-type {
+                    tailf:cli-drop-node-name;
+                    tailf:cli-list-syntax;
+                    type trap-state-enum;
+               }
+            }
+        }
+
+        container stats {
+            description "
+              SNMP stats.
+               ";
+            config false;
+            leaf sysUpTime {
+                type yang:timeticks;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysUpTime";
+            }
+            leaf sysServices {
+                type SNMPv2-MIB:sysServicesType;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysServices";
+            }
+            leaf sysORLastChange {
+                type yang:timestamp;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:system/SNMPv2-MIB:sysORLastChange";
+            }
+            leaf snmpInPkts {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpInPkts";
+            }
+            leaf snmpInBadVersions {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpInBadVersions";
+            }
+            leaf snmpInBadCommunityNames {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpInBadCommunityNames";
+            }
+            leaf snmpInBadCommunityUses {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpInBadCommunityUses";
+            }
+            leaf snmpInASNParseErrs {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpInASNParseErrs";
+            }
+            leaf snmpSilentDrops {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpSilentDrops";
+            }
+            leaf snmpProxyDrops {
+                type yang:counter32;
+                tailf:link "/SNMPv2-MIB:SNMPv2-MIB/SNMPv2-MIB:snmp/SNMPv2-MIB:snmpProxyDrops";
+            }
+        }
+    }
+}

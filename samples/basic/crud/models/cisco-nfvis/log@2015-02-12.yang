@@ -1,0 +1,93 @@
+module log {
+    namespace "http://www.cisco.com/nfv/log";
+    prefix "log";
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Log management within NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2015-02-12 {
+        description "Initial revision";
+    }
+
+    container logs {
+        description "Get logs for debugging";
+        tailf:info "Get logs for debugging";
+        tailf:action archive {
+            tailf:actionpoint logstar;
+            output {
+                leaf archivepath {
+                   description "Get tar file location with all logs for debugging ";
+                   type string;
+                  }
+            }
+        }
+    }
+
+    container debug-logs {
+        description "Show debug logs";
+        tailf:info "Display debug logs";
+
+        list deployments {
+            description "Get deployment related log";
+            tailf:info "Display VNF deployment logs. Input <string>: deployment name and VNF name";
+            config false;
+            tailf:callpoint log_deployments;
+
+            key "deployment-name vm-group-name";
+            leaf deployment-name {
+                description "The deployment name";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            leaf vm-group-name {
+                description "The VM group name in the deployment";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            list logs {
+                description "content of log";
+                leaf time-stamp {
+                    type string;
+                }
+                leaf name {
+                    type string;
+                }
+                leaf log {
+                    type string;
+                }
+            }
+
+        }
+
+        list images {
+            description "Get logs related to image registration";
+            tailf:info "Display image registration logs. Input <string>: image name or 'all'";
+            config false;
+            tailf:callpoint log_images;
+
+            key "image-name";
+            leaf image-name {
+                description "The image name";
+                tailf:info "<string>: 'all' or image name";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            list logs {
+                description "content of log";
+                leaf time-stamp {
+                    type string;
+                }
+                leaf name {
+                    type string;
+                }
+                leaf log {
+                    type string;
+                }
+            }
+        }
+    }
+}

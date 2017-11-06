@@ -1,0 +1,76 @@
+    submodule disk_space {
+
+    belongs-to system {
+        prefix "disk_space";
+    }
+
+    import ietf-inet-types { prefix inet; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Upgrade management within NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2016-07-13 {
+        description "Initial revision";
+    }
+
+    grouping disk-space {
+        container disk-space {
+            description "Disk Details for the NFVIS host";
+            tailf:info "Disk Details for the NFVIS host";
+            config false;
+            tailf:callpoint disk_space;
+
+              list disk-info {
+                tailf:cli-drop-node-name;
+                key disk-name;
+                description "Information about a particular disk";
+                tailf:info "Information about a particular disk";
+                config false;
+
+                leaf disk-name {
+                    description "disk-name";
+                    tailf:info "disk-name";
+                    config false;
+                    type string;
+                }
+                leaf  associated-physical-disk {
+                    description "associated-physical-disk";
+                    tailf:info "associated-physical-disk";
+                    config false;
+                    type string;
+                }
+                leaf total-size {
+                    description "total-size";
+                    tailf:info "total-size";
+                    config false;
+                    type string;
+                }
+                leaf size-used {
+                    description "size-used";
+                    tailf:info "size-used";
+                    config false;
+                    type string;
+                }
+                leaf size-available {
+                    description "size-available";
+                    tailf:info "size-available";
+                    config false;
+                    type string;
+                }
+                leaf use-percent {
+                    description "use-percent";
+                    tailf:info "use-percent";
+                    config false;
+                    type string;
+                }
+            }
+        }
+    }
+}

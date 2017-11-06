@@ -1,0 +1,476 @@
+submodule switch-qos {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The QoS configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  typedef police-action {
+    type enumeration {
+      enum drop {
+        tailf:info "Specify out of profile action drop";
+        value "2";
+      }
+      enum policed-dscp-transmit {
+        tailf:info "Specify out of profile action remark";
+        value "3";
+      }
+    }
+  }
+  // police target bit rate in kilo bits per second (kbps) type
+  typedef police-kbps-type {
+    type uint64 {
+      tailf:info "<100-10000000>;;  Specify the committed-rate which is the average traffic rate in kbps";
+      range "100..10000000";
+    }
+  }
+
+  typedef police-burst-type {
+    type uint32 {
+      tailf:info "<3000-19173960>;;  Specify the committed-burst-byte which is the normal burst size in bytes.";
+      range "3000..19173960";
+    }
+  }
+
+  grouping qos-cmd {
+  list policy-map {
+    tailf:hidden full;
+    tailf:info "Configure Policy Map";
+    tailf:cli-mode-name "config-pmap";
+    key name;
+    leaf name {
+      tailf:cli-suppress-range;
+      type string {
+        length "1..32";
+        tailf:info "WORD;;  policy-map name";
+      }
+    }
+    list class {
+      tailf:info "policy criteria";
+      tailf:cli-mode-name "config-pmap-c";
+      tailf:cli-diff-dependency "../../class-map";
+      key name;
+      leaf name {
+        tailf:cli-suppress-range;
+        type string {
+          length "1..32";
+          tailf:info "<WORD>;;  class-map name";
+        }
+      }
+      container police {
+        tailf:info "Configure policer for classified traffic";
+        tailf:cli-sequence-commands;
+        tailf:cli-compact-syntax;
+        tailf:cli-full-no;
+        choice police-cir-aggregate {
+          case police-cir {
+            //choice cir-peak {
+            //  list cir {
+            //    max-elements 1;
+            //    tailf:cli-suppress-mode;
+            //    tailf:cli-suppress-no;
+            //    tailf:cli-drop-node-name;
+            //    tailf:cli-delete-when-empty;
+            //    key "cir bc";
+                leaf cir {
+                  tailf:cli-incomplete-command;
+                  tailf:cli-drop-node-name;
+                  //tailf:cli-suppress-range;
+                  type police-kbps-type;
+                }
+                // [bc <burst-normal>]
+                leaf bc {
+                  tailf:cli-incomplete-command;
+                  //tailf:cli-suppress-range;
+                  tailf:cli-drop-node-name;
+                  type police-burst-type;
+                }
+                //choice police-cir-action {
+                //  case cir-exceed-action {
+                    leaf exceed-action {
+                      tailf:info "action when rate is exceeded";
+                      tailf:cli-full-command;
+                      type police-action;
+                    }
+                //  }
+                  //case peak-rate-case {
+                  //  container peak-rate {
+                  //    tailf:cli-drop-node-name;
+                  //    tailf:cli-sequence-commands {
+                  //      tailf:cli-reset-siblings;
+                  //    }
+                  //    tailf:cli-compact-syntax;
+                  //    // [pir <bps> be <burst-bytes>]
+                  //    leaf peak {
+                  //      tailf:info "Peak Information Rate";
+                  //      tailf:cli-incomplete-command;
+                  //      type police-bps-type;
+                  //    }
+                  //    leaf be {
+                  //      tailf:cli-drop-node-name;
+                  //      tailf:cli-incomplete-command;
+                  //      tailf:info "Excess burst";
+                  //      type police-burst-type;
+                  //    }
+                  //    leaf violation-action {
+                  //      tailf:info "Action when rate is violated";
+                  //      type police-action;
+                  //    }
+                  //  }
+                  //}
+                //}
+              //}
+            //}
+          }
+          case police-aggregate {
+            leaf aggregate {
+              tailf:info "Choose aggregate policer for current class";
+              type string {
+                length "1..32";
+                tailf:info "<WORD>;;  Enter aggregate-policer name, length <1-32>";
+              }
+            }
+          }
+        }
+      }
+      choice class-set-trust {
+        case class-set {   
+          container set {
+            tailf:info "Configure new values for an incoming packet. This
+                        command is mutually exclusive with the trust command.
+                        Only one of them can appear in the same   ";
+            choice cos-dscp-queue {
+              case set-cos {
+                leaf cos {
+                  tailf:info "Specify VPT Marking";
+                  type uint8 {
+                    range "0..7";
+                    tailf:info "<0-7>;;  Specify VPT Marking";
+                  }
+                }
+              }
+              case set-dscp {
+                leaf dscp {
+                  tailf:info "Specify DSCP Marking";
+                  type uint8 {
+                    range "0..63";
+                    tailf:info "<0-63>;;  Specify DSCP Marking";
+                  }
+                }
+              }
+              case set-queue {
+                leaf queue {
+                  tailf:info "Specify egress queue";
+                  type uint8 {
+                    range "1..8";
+                    tailf:info "<1-8>;;  Specify egress queue";
+                  }
+                }
+              }
+            }
+          }
+        }
+        case class-trust {
+          leaf trust {
+            tailf:cli-full-command;
+            tailf:info "Egress queue is set according to global trust mode";
+            type empty;
+          }
+        }
+      }
+//      leaf mirror {
+//        tailf:info "Mirror the packet";
+//        tailf:cli-full-command;
+//        type string {
+//          pattern "1";
+//          tailf:info "1;;  Session number - always 1";
+//        }
+//      }
+//      container redirect {
+//        tailf:info "Matched packets are sent to the specified port";
+//        choice police-redirect {
+//          case police-redirect-gi {
+//            leaf GigabitEthernet {
+//              tailf:info "GigabitEther interface";
+//              type ge-interface-type;
+//            }
+//          }
+//          case police-redirect-po {
+//            leaf PortChannel {
+//              tailf:info "Port Channel Interface";
+//              type port-channel-type;
+//            }
+//          }
+//          case police-redirect-te {
+//            leaf TegigabitEthernet {
+//              tailf:info "TegigabitEthernet interface";
+//              type string {
+//                pattern "2";
+//                tailf:info "2;;  TengigabitEthernet Interface";
+//              }
+//            }
+//          }
+//        }
+//      }
+    }
+  }
+    list class-map {
+      tailf:hidden full;
+      tailf:info "Configure Class Map";
+      key name;
+      leaf name {
+        type string {
+          length "1..32";
+          tailf:info "WORD;;  class-map name";
+        }
+      }
+      leaf prematch {
+        tailf:cli-prefix-key;
+        tailf:cli-drop-node-name;
+        type enumeration {
+          enum match-all {
+            tailf:info "Logical-AND all matching statements under "+
+              "this classmap";
+          }
+          enum match-any {
+            tailf:info "Logical-OR all matching statements under "
+              +"this classmap";
+          }
+        }
+        default match-all;
+      }
+      container match {
+        tailf:info "Classification criteria";
+        container access-group {
+          tailf:info "Access group";
+          leaf-list name {
+            tailf:cli-drop-node-name;
+            tailf:info "Named Access List";
+            tailf:cli-list-syntax;
+            type string {
+              length "1..32";
+              tailf:info "WORD;;Access List name (Max Size 32)";
+            }
+          }
+        }
+      }
+    }
+
+  container qos {
+    tailf:info "Enable/Disable QoS on the device";
+    tailf:cli-incomplete-command;
+    list aggregate-policer {
+      tailf:hidden full;
+      tailf:info "Assign aggregate policer";
+      tailf:cli-incomplete-command;
+      tailf:cli-suppress-mode;
+      tailf:cli-delete-when-empty;
+      tailf:cli-compact-syntax;
+      tailf:cli-sequence-commands {
+        tailf:cli-reset-all-siblings;
+      }
+      key name;
+      leaf name {
+        tailf:cli-suppress-range;
+        tailf:cli-incomplete-command;
+        tailf:cli-incomplete-no;
+        type string {
+          tailf:info "WORD;;aggregate policer name";
+        }
+      }
+      leaf committed-rate {
+        tailf:cli-drop-node-name;
+        tailf:cli-incomplete-no;
+        tailf:cli-incomplete-command;
+        type uint32 {
+          range "3..57982058";
+          tailf:info "<3-57982058>;; Specify the committed-rate-kbps which is the 
+                                     average traffic rate in kbps";
+        }
+      }
+      leaf committed-burst-size {
+        tailf:cli-drop-node-name;
+        tailf:cli-incomplete-no;
+        tailf:cli-incomplete-command;
+        type uint32 {
+          range "3000..19173960";
+          tailf:info "<3000-19173960>;; Specify the committed-burst-byte which is the 
+                                        normal burst size in bytes";
+        }
+      }
+      leaf exceed-action {
+        tailf:info "action when rate is exceeded";
+        tailf:cli-incomplete-no;
+        type police-action;
+      }
+    }
+    container map {
+      tailf:info "Configure the QoS maps";
+      container dscp-mutation {
+        tailf:info "Modify the DSCP to DSCP mutation map";
+        tailf:cli-compact-syntax;
+        tailf:cli-sequence-commands {
+          tailf:cli-reset-all-siblings;
+        }
+        list map-dscp {
+          tailf:cli-drop-node-name;
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-command;
+          key from-dscp;
+          leaf from-dscp {
+            tailf:cli-suppress-range;
+            tailf:cli-drop-node-name;
+            tailf:cli-incomplete-command;
+            tailf:cli-incomplete-no;
+            type uint8 {
+              range "0..63";
+              tailf:info "<0..63>;;  Specify input dscp value";
+            }
+          }
+          leaf to-dscp {
+            tailf:cli-drop-node-name;
+            type uint8 {
+              range "0..63";
+              tailf:info "<0..63>;;  Specify the output dscp value";
+            }
+          }
+        }
+      }
+      container dscp-queue {
+        tailf:info "Modify the DSCP to queue map";
+        tailf:cli-compact-syntax;
+        tailf:cli-sequence-commands {
+          tailf:cli-reset-all-siblings;
+        }
+        list map-queue {
+          tailf:cli-drop-node-name;
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-command;
+          key from-dscp;
+          leaf from-dscp {
+            tailf:cli-suppress-range;
+            tailf:cli-drop-node-name;
+            tailf:cli-incomplete-command;
+            tailf:cli-incomplete-no;
+            type uint8 {
+              range "0..63";
+              tailf:info "<0..63>;;  Specify input dscp value";
+            }
+          }
+          leaf to-queue {
+            tailf:cli-drop-node-name;
+            type uint8 {
+              range "1..8";
+              tailf:info "<1..8>;;  Enter the queue number to which the DSCP value correspond";
+            }
+          }
+        }
+      }
+      container policed-dscp {
+        tailf:info "Modify the policed-DSCP map for remarking purposes";
+        tailf:cli-compact-syntax;
+        tailf:cli-sequence-commands {
+          tailf:cli-reset-all-siblings;
+        }
+        list map-policed-dscp {
+          tailf:cli-drop-node-name;
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-command;
+          key from-dscp;
+          leaf from-dscp {
+            tailf:cli-suppress-range;
+            tailf:cli-drop-node-name;
+            tailf:cli-incomplete-command;
+            tailf:cli-incomplete-no;
+            type uint8 {
+              range "0..63";
+              tailf:info "<0..63>;;  Specify input dscp value";
+            }
+          }
+          leaf to-mark-down-dscp {
+            tailf:cli-drop-node-name;
+            type uint8 {
+              range "0..63";
+              tailf:info "<0..63>;;  dscp-mark-down Specify the DSCP (0-63) value to mark down to";
+            }
+          }
+        }
+      }
+    }
+    container port {
+      tailf:info "Set the port trust mode";
+      leaf port-mode {
+        tailf:cli-drop-node-name;
+        type enumeration {
+          enum "ports-trusted" {
+            tailf:info "Indicates that
+                       packets are mapped to an egress queue based on the
+                       packet's fields, unless a policy map action explicitly
+                       specifies another trust/set action. Use the qos
+                       advanced-mode trust global command to specify the
+                       trust mode";
+          }
+          enum "ports-not-trusted" {
+            tailf:info "Indicates that
+                       packets are mapped to egress queue 0, unless a policy
+                       map action explicitly specifies another trust/set
+                       action. This is the default setting.";
+          }
+        }
+      }
+    }
+    container trust {
+      tailf:info "Set the trust mode when the default action is ports-trusted";
+      leaf trusted-by {
+        tailf:cli-drop-node-name;
+        type enumeration {
+//          enum "cos" {
+//            tailf:code-name trust-cos;
+//            tailf:info "Specify trust mode cos";
+//          }
+//          enum "dscp" {
+//            tailf:code-name trust-dscp;
+//            tailf:info "Specify trust mode dscp";
+//          }
+          enum "cos-dscp" {
+            tailf:code-name trust-cos-dscp;
+            tailf:info "Specify trust mode cos-dscp";
+            value "2";
+          }
+        }
+      }
+    }
+    leaf dscp-mutation {
+      tailf:info "Apply the DSCP Mutation map to system DSCP trusted ports";
+      tailf:cli-full-command;
+      type empty;
+    }
+//    container wrr-queue {
+//      tailf:info "Configure queue drop mechanism on an egress port";
+//      leaf wrtd {
+//TODO, This will require reset of the switch????
+//        tailf:info "Enable weighted random tail drop";
+//        type empty;
+//      }
+//    }
+  }
+  }
+}

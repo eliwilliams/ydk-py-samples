@@ -1,0 +1,129 @@
+submodule hostdisk {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    import tailf-common { prefix tailf; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import utilization_common {prefix "utilization_common"; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Host disk details for NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemdisk{
+        container disk {
+            config false;
+
+            container stats {
+                list disk-operations {
+                    tailf:callpoint hostdisk_oper;
+                    config false;
+                    description "Disk operation statistics";
+
+                    uses utilization_common:request_time_info;
+                    uses utilization_common:collect_time_info;
+
+                    key "duration";
+                    max-elements 1;
+
+                    list disk {
+                        leaf name {
+                            type string;
+                            description "Name of the disk or disk partition";
+                        }
+
+                        leaf io-time-ms {
+                            type string;
+                            units "IO milliseconds";
+                        }
+                        leaf io-time-weighted-ms {
+                            type string;
+                            units "Weighted IO Milliseconds";
+                        }
+                        leaf merged-reads-per-sec {
+                            type string;
+                            units "Merged Ops/s";
+                        }
+                        leaf merged-writes-per-sec {
+                            type string;
+                            units "Merged Ops/s";
+                        }
+                        leaf bytes-read-per-sec {
+                            type string;
+                            units "Bytes/s";
+                        }
+                        leaf bytes-written-per-sec {
+                            type string;
+                            units "Bytes/s";
+                        }
+                        leaf reads-per-sec {
+                            type string;
+                            units "Ops/s";
+                        }
+                        leaf writes-per-sec {
+                            type string;
+                            units "Ops/s";
+                        }
+                        leaf time-per-read-ms {
+                            type string;
+                            units "Milliseconds";
+                        }
+                        leaf time-per-write-ms {
+                            type string;
+                            units "Milliseconds";
+                        }
+                        leaf pending-ops {
+                            type string;
+                            units "Pending Ops";
+                        }
+                    }
+                }
+
+                list disk-space {
+                    tailf:callpoint hostdisk_space;
+                    config false;
+                    description "Disk Space statistics";
+
+                    uses utilization_common:request_time_info;
+                    uses utilization_common:collect_time_info;
+
+                    key "duration";
+                    max-elements 1;
+
+                    list mount-point {
+                        leaf name {
+                            type string;
+                            description "Name of the file system";
+                        }
+
+                        leaf free-GB {
+                            type string;
+                            units "Gigabytes";
+                        }
+                        leaf used-GB {
+                            type string;
+                            units "Gigabytes";
+                        }
+                        leaf reserved-GB {
+                            type string;
+                            units "Gigabytes";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

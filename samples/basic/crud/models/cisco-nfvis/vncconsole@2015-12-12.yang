@@ -1,0 +1,46 @@
+module vncconsole {
+
+    namespace "http://www.cisco.com/nfvos/vncconsole";
+    prefix "vncconsole";
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains a collection of YANG definitions for
+         VM VNC Console actions";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2015-12-12 {
+        description "Proposed";
+    }
+
+    container vncconsole {
+        description "VNC Console launch for VMs";
+
+        tailf:action start {
+            tailf:actionpoint vncconsole_info;
+            input {
+                leaf vm-name {
+                    description "VNF Name";
+                    type string { pattern "[^<>;?'$|&\\\()\[\]\*]*"; }
+                    mandatory true;
+                }
+                leaf deployment-name {
+                    description "Deployment Name";
+                    type string { pattern "[^<>;?'$|&\\\()\[\]\*]*"; }
+                    mandatory true;
+                }
+            }
+            output {
+                leaf vncconsole-url {
+                    description "VNC Console Info";
+                    type string;
+                    mandatory true;
+                }
+            }
+        }
+    }
+}

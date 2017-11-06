@@ -1,0 +1,118 @@
+submodule system_logging {
+
+    belongs-to system {
+        prefix "logging";
+    }
+
+    import ietf-inet-types { prefix inet; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Logging configuration on NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-15 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+            Initial revision";
+    }
+
+    typedef facility-type-enum {
+        type enumeration {
+            enum local0;
+            enum local1;
+            enum local2;
+            enum local3;
+            enum local4;
+            enum local5;
+            enum local6;
+            enum local7;
+        }
+    }
+
+    typedef severity-type-enum {
+        type enumeration {
+            enum emergency;
+            enum alert;
+            enum critical {
+                tailf:code-name syslog-critical;
+            }
+            enum error;
+            enum warning {
+                tailf:code-name syslog-warning;
+            }
+            enum notice;
+            enum informational;
+            enum debug {
+                tailf:code-name syslog-debug;
+            }
+        }
+    }
+
+    grouping system_logging {
+        container logging {
+            description "Logging configuration";
+            tailf:info "Logging configuration";
+
+            list host {
+                key host;
+                description "IPv4/IPv6 address or domain name of the remote syslog server";
+                tailf:info "IPv4/IPv6 address or domain name of the remote syslog server";
+                max-elements 4;
+                ordered-by user;
+
+                leaf host {
+                    type inet:host;
+                    must ". != '0.0.0.0'" {
+                        error-message "Invalid IP address for remote syslog server.";
+                    }
+                }
+
+                container transport {
+                    description "Transport protocol to reach remote syslog server (default UDP)";
+                    tailf:info "Transport protocol to reach remote syslog server (default UDP)";
+
+                    choice protocol {
+                        case udp {
+                            leaf udp {
+                                type empty;
+                            }
+                        }
+
+                        case tcp {
+                            leaf tcp {
+                                type empty;
+                            }
+                        }
+                    }
+                }
+
+                leaf port {
+                    description "Port to reach remote syslog server";
+                    tailf:info "Port to reach remote syslog server (default 514 for UDP, 601 for TCP)";
+                    type inet:port-number;
+                }
+            }
+
+            leaf facility {
+                description "Syslog facility";
+                tailf:info "Syslog facility";
+                type facility-type-enum;
+                default local7;
+            }
+
+            leaf severity {
+                description "Syslog severity";
+                tailf:info "Syslog severity";
+                type severity-type-enum;
+                default informational;
+            }
+        }
+    }
+}

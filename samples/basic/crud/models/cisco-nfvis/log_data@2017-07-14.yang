@@ -1,0 +1,105 @@
+module log_data {
+
+    yang-version 1;
+    namespace "http://www.cisco.com/nfvos/log_data";
+
+    prefix "logdata";
+
+    import tailf-common {
+        prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains an action model for getting filtered logs";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-07-14 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Added audit logs";
+    }
+
+    revision 2017-02-14 {
+        description "Proposed";
+    }
+
+    typedef module-type-enum {
+        type enumeration {
+            enum "networks";
+            enum "bridges";
+            enum "system";
+            enum "pnp";
+            enum "upgrade";
+            enum "portal";
+            enum "vm-management";
+            enum "image-management";
+            enum "vm-monitoring";
+            enum "rbac";
+            enum "span-session";
+            enum "all-logs";
+            enum "audit";
+        }
+    }
+
+
+    container log-data {
+        tailf:action get-logs {
+            tailf:info "log dump for modules";
+            tailf:actionpoint logdump;
+            input {
+                leaf module {
+                    description "name of module";
+                    tailf:info "NFVIS Module type ";
+                    type module-type-enum;
+                    mandatory true;
+                }
+                leaf name {
+                     when "../logdata:module = 'logdata:networks' or ../logdata:module = 'logdata:bridges' or ../logdata:module = 'logdata:vm-management' or ../logdata:module='logdata:vm-monitoring' or ../logdata:module = 'logdata:image-management'";
+                    tailf:info "optional network/bridge/vm/image name ";
+                    type union {
+                        type string {
+                            pattern "[a-zA-Z0-9\-_]*";
+                            length 1..256;
+                            tailf:info "network or bridge name for network types eg:wan-net or wan-br";
+                        }
+                        type string {
+                            pattern "[a-zA-Z0-9.\-_]*";
+                            tailf:info "DEPLOYMENT-NAME.VM-NAME format for vm/monitoring data eg:1488848058.ROUTER ";
+                        }
+                        type string {
+                            pattern "[a-zA-Z0-9.\-_]*";
+                            tailf:info "image name eg : isrv-universalk9.16.03.01.tar.gz ";
+                        }
+                    }
+                }
+                leaf limit-lines {
+                    tailf:info "Count of log lines expected in output";
+                    type int32 {
+                        range "10..5000";
+                    }
+                    default 10;
+                }
+            }
+            output {
+                list logs {
+                    leaf time-stamp {
+                        type string;
+                    }
+                    leaf log-level {
+                        type string;
+                    }
+                    leaf module-name {
+                        type string;
+                    }
+                    leaf message {
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+}

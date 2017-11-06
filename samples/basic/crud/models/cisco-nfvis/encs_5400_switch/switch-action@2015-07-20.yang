@@ -1,0 +1,1195 @@
+submodule switch-action { 
+belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'action' component provides EXEC mode commands";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping show-interface-grouping {
+    choice intf-case {
+      leaf gigabitEthernet {
+        tailf:info "GigabitEthernet interface number";
+        type ge-interface-type;
+      }
+      leaf port-channel {
+        //tailf:hidden full;
+        tailf:info "Port-channel interface number";
+        type port-channel-type;
+      }
+//      leaf teragigabitEthernet {
+//        tailf:info "10 Giga ethernet interface number";
+//        type te-interface-type;
+//      }
+    }
+  }
+
+  grouping show-interface-grouping-te {
+    choice intf-case {
+      leaf gigabitEthernet {
+        tailf:info "GigabitEthernet interface number";
+        type ge-interface-type;
+      }
+      leaf port-channel {
+        tailf:info "Port-channel interface number";
+        type port-channel-type;
+      }
+      leaf teragigabitEthernet {
+        tailf:info "10 Giga ethernet interface number";
+        type te-interface-type;
+      }
+    }
+  }
+
+  grouping show-mac-addr-grouping {
+    leaf vlan {
+      tailf:info "VLAN number";
+      type vlan-type;
+    }
+    leaf gigabitEthernet {
+      tailf:info "GigabitEthernet interface number";
+      type ge-interface-type;
+    }
+    leaf port-channel {
+      //tailf:hidden full;
+      tailf:info "Port-channel interface number";
+      type port-channel-type;
+    }
+//    leaf teragigabitEthernet {
+//      tailf:info "10 Giga ethernet interface number";
+//      type te-interface-type;
+//    }
+    leaf address {
+      tailf:info "Specific MAC address";
+      type yang:mac-address {
+        tailf:info "EE:EE:EE:EE:EE:EE;;  Specific MAC address";
+      }
+    }
+  }
+  grouping show-qos-map-grouping {
+     tailf:action dscp-queue {
+        tailf:info "Display the DSCP-to-queue map";
+     }
+     tailf:action policed-dscp {
+        tailf:info "Display the policed DSCP-to-DSCP map";
+     }
+     tailf:action dscp-mutation {
+        tailf:info "Display the Mutation DSCP-to-DSCP map";
+     }
+  }
+
+  grouping action-cmd {
+  container show {
+    tailf:info "Show switch related information";
+    container mac {
+      tailf:info "Show MAC configuration";
+      container address-table {
+        tailf:info "Show MAC address table configuration";
+        tailf:action dynamic {
+          tailf:cli-operational-mode;
+          tailf:info "Dynamic address";
+          tailf:actionpoint show-mac-addr-dynamic;
+          input {
+            uses show-mac-addr-grouping;
+          }
+          output {
+            leaf showmacresult {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+        tailf:action count {
+          tailf:cli-operational-mode;
+          tailf:info "MAC addresses count";
+          tailf:actionpoint mac-addr-count;
+          input {
+            uses show-mac-addr-grouping;
+          }
+          output {
+            leaf showmacresult {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+        tailf:action secure {
+          tailf:hidden full;
+          tailf:cli-operational-mode;
+          tailf:info "Show secure addresses";
+          tailf:actionpoint show-mac-addr-secure;
+          input {
+            uses show-mac-addr-grouping;
+          }
+          output {
+            leaf showmacresult {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+        tailf:action static {
+          tailf:cli-operational-mode;
+          tailf:info "Show static addresses";
+          tailf:actionpoint show-mac-addr-static;
+          input {
+            uses show-mac-addr-grouping;
+          }
+          output {
+            leaf showmacresult {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+        tailf:action using {
+          tailf:cli-operational-mode;
+          tailf:info "Using specific inteface or Mac address";
+          tailf:actionpoint show-mac-addr-using;
+          input {
+            uses show-mac-addr-grouping;
+          }
+          output {
+            leaf showmacresult {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+      }
+    }
+    container interface {
+      tailf:info "Interfaces";
+      tailf:action access-list {
+        tailf:hidden full;
+        tailf:info "Display access lists applied on interfaces";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-access-list;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action advertise {
+        tailf:info "Show the advertisement information";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-advertise;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action configuration {
+        tailf:info "Interface configuration";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-configuration;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action counters {
+        tailf:info "Interface counters";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-counters;
+        input {
+          uses show-interface-grouping-te;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action description {
+        tailf:info "Interface description";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-description;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action protected-ports {
+        tailf:info "protected ports information";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-protected-ports;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action status {
+        tailf:info "Interface status";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-status;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action switchport {
+        tailf:info "switchport";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-switchport;
+        input {
+          uses show-interface-grouping;
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      tailf:action port-channel {
+        //tailf:hidden full;
+        tailf:info "Port-channel member ports information";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-interface-port-channel;
+        input {
+          leaf channel-number {
+            tailf:cli-drop-node-name;
+            tailf:info "Port-channel interface number";
+            type port-channel-type;
+          }
+        }
+        output {
+          leaf show-intf-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+    }
+    container spanning-tree {
+      tailf:info "Spanning-tree information";
+      tailf:action summary {
+        tailf:info "Spanning-tree information summary";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-stp-summary;
+        input {
+        }
+        output {
+          leaf show-stp-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }  
+      container bpdu {
+        tailf:info "BPDU handling when STP is disabled";
+        tailf:action interface {
+          tailf:info "Display information on the port";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-stp-bpdu-intf;
+          input {
+            uses show-interface-grouping;
+          }
+          output {
+            leaf show-intf-result {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }  
+        tailf:action detail {
+          tailf:info "Display information on all the ports (including not-present ports)";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-stp-bpdu-detail;
+          input {
+          }
+          output {
+            leaf show-stp-result {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }  
+      }
+//      tailf:action mst-configuration {
+//        tailf:info "Mstp configured information";
+//        tailf:cli-operational-mode;
+//        tailf:actionpoint show-stp-mst-config;
+//        input {
+//        }
+//        output {
+//          leaf show-stp-result {
+//            tailf:cli-drop-node-name;
+//            type string;
+//          }
+//        }
+//      }  
+    }
+    container rmon {
+      tailf:info "Remote Monitoring (RMON) configuration subcommand";
+      tailf:action statistics {
+        tailf:info "Display RMON Ethernet Statistics";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-rmon-stat;
+        input {
+          uses show-interface-grouping-te;
+        }
+        output {
+          leaf show-rmon-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+    }
+    container ip {
+      tailf:info "IP information";
+      container igmp {
+        tailf:info "IGMP information";
+        container snooping {
+          tailf:info "IGMP snooping information";
+          tailf:action groups {
+            tailf:info "Group of multicast addresses learned by IGMP snooping";
+            tailf:cli-operational-mode;
+            tailf:actionpoint show-ip-igmp-snooping-groups;
+            input {
+              leaf vlan {
+                type vlan-type;
+              }
+              //leaf ip-mult-addr {
+              //}
+              leaf ip-addr {
+                type inet:ipv4-address {
+                  tailf:info "H.H.H.H;;IP address";
+                }
+              }
+            }
+            output {
+              leaf show-ip-igmp-snooping-result {
+                tailf:cli-drop-node-name;
+                type string;
+              }
+            }
+          }
+          tailf:action interface {
+            tailf:info "IGMP snooping interface information";
+            tailf:cli-operational-mode;
+            tailf:actionpoint show-ip-igmp-snooping-intf;
+            input {
+              leaf vlan {
+                tailf:cli-drop-node-name;
+                type vlan-type;
+              }
+            }
+            output {
+              leaf show-ip-igmp-snooping-result {
+                tailf:cli-drop-node-name;
+                type string;
+              }
+            }
+          }
+          tailf:action mrouter {
+            tailf:info "IGMP snooping interface information";
+            tailf:cli-operational-mode;
+            tailf:actionpoint show-ip-igmp-snooping-mrouter;
+            input {
+              leaf interface {
+                //tailf:cli-drop-node-name;
+                type vlan-type;
+              }
+            }
+            output {
+              leaf show-ip-igmp-snooping-result {
+                tailf:cli-drop-node-name;
+                type string;
+              }
+            }
+          }
+        }
+      }
+      tailf:action interface {
+        tailf:info "IP interface status and configuration";
+        tailf:actionpoint show-ip-interface;
+        tailf:cli-operational-mode;
+          input {
+        }
+        output {
+          leaf show-ip-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+      tailf:action route {
+        tailf:info "Display the IP routing table";
+        tailf:actionpoint show-ip-route;
+        tailf:cli-operational-mode;
+        input {
+        }
+        output {
+          leaf show-ip-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+    }
+    container radius-server {
+      tailf:info "Radius server's configuration";
+      tailf:action key {
+        tailf:info "show radius-server's keys";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-radius-server-key;
+        input {
+        }
+        output {
+          leaf show-radius-server-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+      tailf:action configuration {
+        tailf:info "show radius-server's configuration";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-radius-server-configuration;
+        input {
+        }
+        output {
+          leaf show-radius-server-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+    }
+    container bridge {
+      tailf:info "Bridging information";
+      container multicast {
+        tailf:info "Multicast bridging information";
+        tailf:action filtering {
+          tailf:info "Multicast filtering information";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-bridge-multicast-filtering;
+          input {
+            leaf vlan {
+              type vlan-type;
+            }
+          }
+          output {
+            leaf show-radius-server-result {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+        tailf:action unregistered {
+          tailf:info "Whether an egress port is to forward or filter unregistered multicast frames";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-bridge-multicast-unregistered;
+          input {
+//            uses show-interface-grouping;
+          }
+          output {
+            leaf show-radius-server-result {
+              tailf:cli-drop-node-name;
+              type string;
+            }
+          }
+        }
+      }
+      container unicast {
+        tailf:hidden full;
+        tailf:info "unicast configuration subcommand";
+        tailf:action unknown {
+          tailf:info "unknown configuration subcommand";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-bridge-unicast-unknown;
+          input {
+            uses show-interface-grouping;
+          }
+          output {
+            leaf show-unicast-unknown-result {
+              tailf:cli-drop-node-name;
+              type string;
+             }
+          }
+        }
+      }
+    }
+    container vlan {
+      tailf:info "VLAN information";
+      tailf:action private-vlan {
+        tailf:info "private VLAN";
+        tailf:actionpoint show-vlan-private-vlan;
+        tailf:cli-operational-mode;
+        input {
+          leaf tag {
+            type vlan-type;
+          }
+        }
+        output {
+          leaf show-vlan-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+      tailf:action tag {
+        tailf:info "Display by VLAN Tags";
+        tailf:actionpoint show-vlan-tag;
+        tailf:cli-operational-mode;
+        input {
+          leaf tag {
+            tailf:cli-drop-node-name;
+            type vlan-type;
+          }
+        }
+        output {
+          leaf show-vlan-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+      tailf:action name {
+        tailf:info "Display by VLAN name";
+        tailf:actionpoint show-vlan-name;
+        tailf:cli-operational-mode;
+        input {
+          leaf vlan-name {
+            tailf:cli-drop-node-name;
+            type string {
+              length "1..32";
+              tailf:info "WORD;; Up to 32 characters vlan name)";
+            }
+          }
+        }
+        output {
+          leaf show-vlan-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+      tailf:action all {
+        tailf:info "Display by all VLANs";
+        tailf:actionpoint show-vlan-all;
+        tailf:cli-operational-mode;
+        input {
+        }
+        output {
+          leaf show-vlan-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      } 
+    }
+    tailf:action arp {
+      tailf:info "Display the entries in the ARP table";
+      tailf:actionpoint show-arp;
+      tailf:cli-operational-mode;
+      input {
+      }
+      output {
+        leaf show-arp-result {
+          tailf:cli-drop-node-name;
+          type string;
+        }
+      }
+    } 
+    container qos {
+       tailf:info "Display quality of service (QoS) mode for the entire device";
+       tailf:hidden full;
+       tailf:action all {
+          tailf:info "Display qosi parameters";
+          tailf:actionpoint show-qos-all;
+          tailf:cli-operational-mode;
+          input {
+          }
+          output {
+             leaf show-qos-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action aggregate-policer {
+          tailf:info "Display the aggregate policer parameter";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-qos-policer;
+          input {
+             leaf policy-name {
+                tailf:cli-drop-node-name;
+                tailf:info "WORD;; Specify the aggregate policer name to display";
+                type string;
+             }
+          }
+          output {
+             leaf show-qos-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action interface {
+          tailf:info "Display quality of service (QoS) information at the interface level";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-qos-interface;
+          input {
+             uses show-interface-grouping;
+          }
+          output {
+             leaf show-qos-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action map {
+          tailf:info "Display quality of service (QoS) mapping information";
+          tailf:cli-operational-mode;
+          tailf:actionpoint show-qos-map;
+          input {
+             uses show-qos-map-grouping;
+          }
+          output {
+             leaf show-qos-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+    }
+
+    container dot1x {
+       tailf:info "802.1x information";
+       tailf:action statistics {
+          tailf:info "Display 802.1x statistics";
+          tailf:actionpoint show-dot1x-stats;
+          tailf:cli-operational-mode;
+          input {
+//             choice intf {
+//                leaf gigabitEthernet {
+//                   tailf:info "GigabitEnternet interface";
+//                   type ge-interface-type;
+//                }
+//                leaf teragigabitEthernet {
+//                   tailf:info "10 Giga ethernet interface number";
+//                   type te-interface-type;
+//                }
+//             }
+          }
+          output {
+             leaf show-dot1x-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action users {
+          tailf:info "Display active 802.1 authenticated users";
+          tailf:actionpoint show-dot1x-users;
+          tailf:cli-operational-mode;
+          input {
+          }
+          output {
+             leaf show-dot1x-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action interface {
+          tailf:info "Specify an interface ID. The interface ID must be an Ethernet port";
+          tailf:actionpoint show-dot1x-intf;
+          tailf:cli-operational-mode; 
+          input {
+             choice intf {
+                leaf gigabitEthernet {
+                   tailf:info "GigabitEnternet interface";
+                   type ge-interface-type;
+                }
+//                leaf teragigabitEthernet {
+//                   tailf:info "10 Giga ethernet interface number";
+//                   type te-interface-type;
+//                }
+             }
+          }
+          output {
+             leaf show-dot1x-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+       tailf:action detailed {
+          tailf:info "Display information on all the ports (including not-present ports).";
+          tailf:actionpoint show-dot1x-detailed;
+          tailf:cli-operational-mode; 
+          input {
+          }
+          output {
+             leaf show-dot1x-result {
+                tailf:cli-drop-node-name;
+                type string;
+             }
+          }
+       }
+      tailf:action all {
+        tailf:info "Display by all dot1x";
+        tailf:hidden full;
+        tailf:actionpoint show-dot1x-all;
+        tailf:cli-operational-mode;
+        input {
+        }
+        output {
+          leaf show-dot1x-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+    }
+    container class-map {
+      tailf:info "Display QoS class maps, which define the match criteria to classify traffic";
+      tailf:hidden full;
+      tailf:action all {
+        tailf:info "Name of the class map";
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-class-map;
+        input {
+        }
+        output {
+          leaf show-class-map-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+    }
+    container access-lists {
+      tailf:info "Display not empty access control lists (ACLs) configured on the switch";
+      tailf:hidden full;
+      tailf:action all {
+        tailf:cli-operational-mode;
+        tailf:actionpoint show-access-lists;
+        input {
+        }
+        output {
+          leaf show-access-lists-result {
+            tailf:cli-drop-node-name;
+            type string;
+          }
+        }
+      }
+    }
+    tailf:action lacp {
+      tailf:info "IEEE 802.3 link aggregation information";
+      //tailf:hidden full;
+      tailf:cli-operational-mode;
+      tailf:actionpoint show-lacp;
+      input {
+        uses show-interface-grouping;
+      }
+      output {
+        leaf show-lacp-result {
+          tailf:cli-drop-node-name;
+          type string;
+        }
+      }
+    }
+    tailf:action switch-config {
+      tailf:info "Show switch internal configuration";
+      tailf:cli-operational-mode;
+      tailf:actionpoint show-running-config;
+      input {
+      }
+      output {
+        leaf show-running-config {
+          tailf:cli-drop-node-name;
+          type string;
+        }
+      }
+    }
+    tailf:action switch-tech-support {
+      tailf:info "Show switch internal tech-support";
+      tailf:cli-operational-mode;
+      tailf:actionpoint show-tech-support;
+      input {
+      }
+      output {
+        leaf show-tech-support {
+          tailf:cli-drop-node-name;
+          type string;
+        }
+      }
+    }
+    tailf:action power-inline {
+      tailf:info "Display inline power information";
+      tailf:cli-operational-mode;
+      tailf:actionpoint show-power-inline;
+      input {
+      }
+      output {
+        leaf show-poe-result {
+          tailf:cli-drop-node-name;
+          type string;
+        }
+      }
+    }
+  }
+  container renew {
+    tailf:hidden full;
+    tailf:info "Renew DHCP address on LAN ports";
+    tailf:action dhcp {
+      tailf:cli-operational-mode;
+      tailf:info "DHCP action";
+      tailf:actionpoint renew-dhcp;
+      input {
+        leaf vlan {
+          type vlan-type;
+        }
+      }
+      output {
+      }
+    }
+  }
+
+  container clear {
+    tailf:info "Reset functions";
+    tailf:action counters {
+      tailf:cli-operational-mode;
+      tailf:info "Clear counters on one or all interfaces";
+      tailf:actionpoint clear-counter;
+      input {
+        choice intf {
+//          leaf port-channel {
+//            type uint16;
+//          }
+          leaf gigabitEthernet {
+            tailf:info "GigabitEnternet interface";
+            type ge-interface-type;
+          }
+        }
+      }
+      output {
+      }
+    }
+    container logging {
+      tailf:hidden full;
+      tailf:info "Clear logging";
+      tailf:action buffer {
+        tailf:cli-operational-mode;
+        tailf:info "Clear logging buffer";
+        tailf:actionpoint clear-logging-buffer;
+        input {
+        }
+        output {
+        }
+      }
+      tailf:action file {
+        tailf:cli-operational-mode;
+        tailf:info "Clear logging file";
+        tailf:actionpoint clear-logging-file;
+        input {
+        }
+        output {
+        }
+      }
+    }
+
+    tailf:action host {
+      tailf:hidden full;
+      tailf:cli-operational-mode;
+      tailf:info "Clear host";
+      tailf:actionpoint clear-host;
+      input {
+      }
+      output {
+      }
+    }
+
+    tailf:action arp-cache {
+      tailf:cli-operational-mode;
+      tailf:info "Clear dynamic entries in ARP cache";
+      tailf:actionpoint clear-arp-cache;
+      input {
+      }
+      output {
+      }
+    }
+    container qos {
+      tailf:hidden full;
+      tailf:info "qos";
+      tailf:action statistics {
+        tailf:cli-operational-mode;
+        tailf:info "Clear qos statistics";
+        tailf:actionpoint clear-qos-stats;
+        input {
+        }
+        output {
+        }
+      }
+    }
+
+    container spanning-tree {
+      tailf:info "Clear spanning tree parameters";
+      tailf:action detected-protocols {
+        tailf:info "Restart the protocol migration process";
+        tailf:actionpoint clear-spanning-tree-stats;
+        tailf:cli-operational-mode;
+        input {
+          choice intf {
+            leaf port-channel {
+              //tailf:hidden full;
+              tailf:info "Port channel interface";
+              type port-channel-type;
+            }
+            leaf gigabitEthernet {
+              tailf:info "GigabitEnternet interface";
+              type ge-interface-type;
+            }
+          }
+        }
+        output {
+        }
+      }
+    }
+    container ip {
+      tailf:hidden full;
+      tailf:info "IP";
+      container dhcp {
+        tailf:info "Delete DHCP commands";
+        tailf:action binding {
+          tailf:info "Delete dynamic address binding";
+          tailf:actionpoint clear-ip-dhcp-binding;
+          tailf:cli-operational-mode;
+          input {
+            leaf ipaddr {
+              tailf:cli-drop-node-name;
+              type inet:ipv4-address {
+                tailf:info "H.H.H.H;;IP address";
+              }
+            }
+          }
+          output {
+          }
+        }
+      }
+//      container igmp {
+//      tailf:info "IGMP clear commands";
+//      tailf:action counters {
+//        tailf:info "This command to clear the IGMP counters";
+//          tailf:actionpoint clear-spanning-tree-stats;
+//          tailf:cli-operational-mode;
+//          input {
+//            choice intf {
+////              leaf port-channel {
+////                type uint16;
+////              }
+//              leaf gigabitEthernet {
+//                tailf:info "GigabitEnternet interface";
+//                type ge-interface-type;
+//              }
+//            }
+//          }
+//          output {
+//          }
+//        }
+//      }
+    }
+    container switchport {
+       tailf:hidden full;
+       tailf:info "Clear Clear switchport monitor statistics";
+       tailf:action monitor {
+          tailf:info "Clear switchport monitor statistics";
+          tailf:actionpoint clear-switchport-monitor-stats;
+          tailf:cli-operational-mode;
+          input {
+             choice intf {
+                leaf gigabitEthernet {
+                   tailf:info "GigabitEnternet interface";
+                   type ge-interface-type;
+                }
+                leaf port-channel {
+                   //tailf:hidden full;
+                   tailf:info "Port-channel interface number";
+                   type port-channel-type;
+                }
+             }
+          }
+          output {
+          }
+       }
+    }
+    container dot1x {
+       tailf:info "802.1x EXEC commands";
+       tailf:action statistics {
+          tailf:info "Clear 802.1x statistics on one or all interfaces";
+          tailf:actionpoint clear-dot1x-stats;
+          tailf:cli-operational-mode;
+          input {
+             choice intf {
+                leaf gigabitEthernet {
+                   tailf:info "GigabitEnternet interface";
+                   type ge-interface-type;
+                }
+                leaf port-channel {
+                   //tailf:hidden full;
+                   tailf:info "Port-channel interface number";
+                   type port-channel-type;
+                }
+             }
+          }
+          output {
+          }
+       }
+    }
+    container mac {
+       tailf:info "Clear MAC configuration";
+       container address-table {
+          tailf:info "Bridge MAC address table configuration";
+          tailf:action dynamic {
+             tailf:cli-operational-mode;
+             tailf:info "Dynamic address";
+             tailf:actionpoint clear-mac-addr-dynamic;
+             input {
+                leaf gigabitEthernet {
+                   tailf:info "GigabitEnternet interface";
+                   type ge-interface-type;
+                }
+                leaf port-channel {
+                   //tailf:hidden full;
+                   tailf:info "Port-channel interface number";
+                   type port-channel-type;
+                }
+             }
+             output {
+             }
+          }
+          tailf:action secure {
+             tailf:hidden full;
+             tailf:cli-operational-mode;
+             tailf:info "Secure address";
+             tailf:actionpoint clear-mac-addr-secure;
+             input {
+                leaf gigabitEthernet {
+                   tailf:info "GigabitEnternet interface";
+                   type ge-interface-type;
+                }
+                leaf port-channel {
+                   //tailf:hidden full;
+                   tailf:info "Port-channel interface number";
+                   type port-channel-type;
+                }
+             }
+             output {
+             }
+          }
+       }
+    }
+  }
+
+  container reload {
+      tailf:info "Reload switch device";
+      tailf:hidden all;
+      tailf:action device {
+        tailf:cli-operational-mode;
+        tailf:info "Reload switch device";
+        tailf:actionpoint reload-switch;
+        input {
+        }
+        tailf:confirm-text 'Are you sure you want to do reload the switch?' {
+        tailf:confirm-default false;
+        }
+        output {
+        }
+      }
+  }
+  container daemon {
+      tailf:info "switch-confd daemon";
+      tailf:action restart {
+        tailf:cli-operational-mode;
+        tailf:info "Restart switch-confd daemon";
+        tailf:actionpoint restart-switch-srvc-confd;
+        input {
+        }
+        tailf:confirm-text 'Are you sure you want to restart the switch-confd daemon?' {
+        tailf:confirm-default false;
+        }
+        output {
+        }
+      }
+      tailf:action start {
+        tailf:cli-operational-mode;
+        tailf:info "Start switch-confd daemon";
+        tailf:actionpoint start-switch-srvc-confd;
+        input {
+        }
+        tailf:confirm-text 'Are you sure you want to start the switch-confd daemon?' {
+        tailf:confirm-default false;
+        }
+        output {
+        }
+      }
+      tailf:action stop {
+        tailf:cli-operational-mode;
+        tailf:info "Stop switch-confd daemon";
+        tailf:actionpoint stop-switch-srvc-confd;
+        input {
+        }
+        tailf:confirm-text 'Are you sure you want to stop the switch-confd daemon?' {
+        tailf:confirm-default false;
+        }
+        output {
+        }
+      }
+    }
+  }
+}

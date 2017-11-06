@@ -1,0 +1,129 @@
+module packet_capture {
+
+    yang-version 1;
+
+    namespace "http://www.cisco.com/nfvos/packet_capture";
+	prefix "packet-capture";
+    import tailf-common {
+          prefix tailf;
+    }
+    import vmlc { 
+        prefix vmlc; 
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains a collection of YANG definitions for packet capture";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    typedef protocol-type-enum {
+        type enumeration {
+            enum ICMP;
+            enum ARP;
+            enum UDP;
+            enum TCP;
+        }
+    }
+    container packet-capture {
+        tailf:cli-drop-node-name;
+        tailf:action  tcpdump {
+            tailf:info "Packet capture for specific port";
+            tailf:actionpoint tcpdump;
+            input {
+                choice ports {
+                    case vnic {
+                        container vnic {
+                            tailf:info "Virtual Port";
+                            description "Virtual Port";
+                            tailf:cli-sequence-commands;
+                            tailf:cli-compact-syntax;
+                            tailf:cli-incomplete-command;
+                            tailf:cli-drop-node-name;
+                            leaf vnic {
+                                tailf:info "Virtual port";
+                                type empty;
+                            }
+                            leaf tenant-name {
+                                tailf:info "Tenant Name";
+                                type string;
+                                default "admin";
+                            }
+                            leaf deployment-name {
+                                tailf:info "Deployment Name";
+                                tailf:cli-strict-leafref;
+                                type leafref {
+                                    path "/vmlc:vm_lifecycle/vmlc:tenants/vmlc:tenant[vmlc:name=current()/../tenant-name]/vmlc:deployments/vmlc:deployment/vmlc:name";
+                                }
+                            }
+                            leaf vm-name {
+                              tailf:info "VNF's VM name";
+                              tailf:cli-strict-leafref;
+                              type leafref {
+                                path "/vmlc:vm_lifecycle/vmlc:tenants/vmlc:tenant[vmlc:name=current()/../tenant-name]/vmlc:deployments/vmlc:deployment[vmlc:name=current()/../deployment-name]/vmlc:vm_group/vmlc:name";
+                              }
+                            }
+                            leaf vnic-id {
+                                tailf:info "VM's vNIC number";
+                                tailf:cli-strict-leafref;
+                                type leafref {
+                                    path "/vmlc:vm_lifecycle/vmlc:tenants/vmlc:tenant[vmlc:name=current()/../tenant-name]/vmlc:deployments/vmlc:deployment[vmlc:name=current()/../deployment-name]/vmlc:vm_group[vmlc:name=current()/../vm-name]/vmlc:interfaces/vmlc:interface/vmlc:nicid";
+                                }
+                            }
+                        }
+                    }   
+                    case port {
+                        leaf port {
+                            tailf:info "Physical port";
+                            type string;
+                            mandatory true;
+                            description "Physical Port";
+                        }
+                    }
+                }
+
+                leaf time {
+                    tailf:info "Packet capture time in seconds";
+                    type uint16 {
+                        range "1..3600";
+                    }
+                    description "Packet capture time in seconds";
+                    default 60;
+                }
+
+                choice filter-choice {
+                    case protocols {
+                        leaf protocol {
+                            tailf:info "Protocol specific capture like ICMP/TCP/UDP/ARP.";
+                            type protocol-type-enum;
+                            description "Protocol specific capture like ICMP/TCP/UDP/ARP.";
+                        }
+                    }
+
+                    case filter {
+                        leaf filter {
+                            tailf:info "Specific tcpdump filter";
+                            type string;
+                            description "Specific tcpdump filter";
+                        }
+                    }
+                }
+            }
+            output {
+                leaf pcap-location {
+                    description "Pcap File location";
+                    type string;
+                    mandatory true;
+                }
+            }
+        }
+    }
+}

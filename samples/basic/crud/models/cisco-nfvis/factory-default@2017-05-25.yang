@@ -1,0 +1,97 @@
+module factory-default {
+
+    namespace "http://www.cisco.com/nfvos/factory-default";
+    prefix factory-default;
+
+    tailf:export cli;
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+       "This module contains YANG definition for resetting
+        user admin password to default password";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-25 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Modified warning messages";
+    }
+
+    revision 2016-12-01 {
+        description "Proposed";
+    }
+
+    container factory-default-reset {
+        description "Reset all or some configuration to default";
+        tailf:info "Reset all or some configuration to default";
+        tailf:action all {
+            description "Reset all configuration";
+            tailf:info "Reset all configuration";
+            tailf:actionpoint factory_default_point;
+            input {
+            }
+            output {
+            }
+            tailf:confirm-text 'Warning: Will delete VM’s and volumes, files including logs, images and certificates, Erase all configuration. Connectivity will be lost, admin password will be changed to factory default password. 
+
+The system will be rebooted automatically after reset Please do not perform any operation for 15- 20 minutes while factory reset is in progress!!
+
+Are you sure you want to perform factory reset? ' {
+                tailf:confirm-default true;
+            }
+        }
+        tailf:action all-except-images {
+            description "Reset all configuration except images";
+            tailf:info "Reset all configuration except images";
+            tailf:actionpoint factory_default_point;
+            input {
+            }
+            output {
+            }
+            tailf:confirm-text 'Warning: Will delete VM’s and volumes, files including logs and certificates. Erase all configuration except images. Connectivity will be lost, admin password will be changed to factory default password. 
+
+The system will be rebooted automatically after reset Please do not perform any operation for 15- 20 minutes while factory reset is in progress!!
+
+Are you sure you want to perform factory reset? ' {
+                tailf:confirm-default true;
+            }
+        }
+        tailf:action manufacturing {
+            description "Reset all configuration except images";
+            tailf:info "Reset all configuration except images";
+            tailf:actionpoint factory_default_point;
+            input {
+            }
+            output {
+            }
+            tailf:confirm-text 'Warning: Will delete VM’s and volumes, files including logs and certificates. Erase all configuration except images. Connectivity will be lost, admin password will be changed to factory default password. 
+
+The system will be rebooted automatically after reset Please do not perform any operation for 15- 20 minutes while factory reset is in progress!!
+
+Are you sure you want to perform factory reset? ' {
+                tailf:confirm-default true;
+            }
+        }
+        tailf:action all-except-images-connectivity {
+            description "Reset all configuration except images and connectivity";
+            tailf:info "Reset all configuration except images and connectivity";
+            tailf:actionpoint factory_default_point;
+            input {
+            }
+            output {
+            }
+            tailf:confirm-text 'Warning: Will delete VM’s and volumes, files including logs and certificates. Erase all configuration except images, network/connectivity. 
+
+The system will be rebooted automatically after reset Please do not perform any operation for 15- 20 minutes while factory reset is in progress!!
+
+Are you sure you want to perform factory reset? ' {
+                tailf:confirm-default true;
+            }
+        }
+    }
+}

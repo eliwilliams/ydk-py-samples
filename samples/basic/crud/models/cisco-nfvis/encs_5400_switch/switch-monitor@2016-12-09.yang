@@ -1,0 +1,193 @@
+submodule switch-monitor {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'monitor' component provides monitor command configuratioin";
+
+  revision 2016-12-09{
+    description
+      "Initial revision.";
+  }
+
+
+  typedef traffic-direction {
+      type enumeration {
+          enum rx;
+          enum tx;
+          enum both;
+      }
+      default both;
+  }
+
+  grouping monitor-cmd {
+    container monitor {
+        tailf:info "Perform switch port monitor";
+        tailf:cli-incomplete-no;
+        list session {
+          tailf:info "Define a destination session number identifier with the SPAN";
+          tailf:cli-delete-when-empty;
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-command;
+          tailf:cli-incomplete-no;
+          key session-id;
+          leaf session-id {
+            tailf:cli-suppress-range;
+            type uint8 {
+              range "1..7";
+              tailf:info "<1-7>;;  specifies the session number identifier with the SPAN";
+            }
+          } 
+          /*
+           * SPAN session source config
+           */
+          container source {
+              tailf:info "SPAN source interfaces, remote vlan, VLANs";
+              choice source_choice {
+                case interfaces {
+                     container interfaces {
+                       tailf:info "Set SPAN interface port";
+                       tailf:cli-compact-syntax;
+                       //tailf:cli-flatten-container;
+                       list tengigabitEthernet {
+                           tailf:info "10 Giga ethernet interface to configure";
+                           tailf:hidden full;
+                           tailf:cli-suppress-mode;
+                           key "name";
+                           leaf name {
+                             tailf:cli-suppress-range;
+                             type te-interface-type;
+                           }
+                           leaf direction {
+                               tailf:cli-drop-node-name;
+                               tailf:info "Monitor rx/tx/both traffic";
+                               type traffic-direction;
+                           }
+                       }
+                       list gigabitEthernet {
+                           tailf:info "Giga ethernet interface to configure";
+                           tailf:cli-suppress-mode;
+                           key "name";
+                           leaf name {
+                               tailf:cli-suppress-range;
+                               type ge-interface-type;
+                           }
+                           leaf direction {
+                               tailf:info "Monitor rx/tx/both traffic";
+                               tailf:cli-drop-node-name;
+                               type traffic-direction;
+                           }
+                       }
+                     }
+                }
+                case remote {
+                    container remote {
+                      tailf:info "Set remote VLAN source port";
+                      leaf vlan {
+                        tailf:info "Set remote VLAN source port";
+                        type vlan-type;
+                      }
+                    }
+                }
+                case vlan {
+                    leaf-list vlan {
+                        tailf:info "Set SPAN vlan source port";
+                        tailf:cli-range-list-syntax;
+                        type vlan-type;
+                    }
+                }
+              }
+          }
+
+          /*
+           * SPAN session destination config
+          */
+          container destination {
+              tailf:info "SPAN destination interface, VLAN";
+              tailf:cli-full-no;
+              choice destination_choice {
+                  case interfaces {
+                     container interfaces {
+                         tailf:cli-sequence-commands;
+                         tailf:cli-compact-syntax;
+                         tailf:info "SPAN destination interface";
+                         choice port {
+                           case tege-port {
+                             leaf tengigabitEthernet {
+                                 tailf:info "10 Giga ethernet interface to configure";
+                                 tailf:hidden full;
+                                 type te-interface-type;
+                             }
+                         }
+                           case gige-port {
+                             leaf gigabitEthernet {
+                                 tailf:info "Giga ethernet interface to configure";
+                                 type ge-interface-type;
+                             }
+                         }
+                       }
+                       leaf network {
+                         type empty;
+                       }
+                     }
+                  }
+                  case remote {
+                    container remote {
+                      tailf:info "Set RSPAN remote VLAN destination";
+                      tailf:cli-incomplete-command;
+                      tailf:cli-sequence-commands;
+                      tailf:cli-compact-syntax;
+                      leaf vlan {
+                          tailf:cli-incomplete-command;
+                          tailf:info "SPAN destination VLAN";
+                          type vlan-type;
+                      }
+                      leaf reflector-port {
+                        tailf:cli-incomplete-command;
+                        type empty;
+                        //mandatory true;
+                        tailf:info "Set reflector port for RSPAN session";
+                      }
+                      choice reflector {
+                        case tengigabitEthernet {
+                          leaf tengigabitEthernet {
+                              tailf:hidden full;
+                              tailf:cli-incomplete-command;
+                              tailf:info "10 Giga ethernet interface to configure";
+                                type te2-interface-type;
+                              }
+                        }
+                        case gigabitEthernet {
+                          leaf gigabitEthernet {
+                              tailf:cli-incomplete-command;
+                              tailf:info "Giga ethernet interface to configure";
+                              type ge-interface-type;
+                          }
+                        }
+                      }
+                      leaf network {
+                        tailf:cli-full-command;
+                        type empty;
+                        //mandatory true;
+                      }
+                    }
+                  }
+              }
+          }
+      }
+   }
+  }
+}

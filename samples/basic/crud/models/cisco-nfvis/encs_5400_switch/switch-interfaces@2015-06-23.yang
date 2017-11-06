@@ -1,0 +1,1978 @@
+submodule switch-interfaces {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'interfaces' component provides support for configuring network
+     interfaces.";
+
+  revision 2015-06-23{
+    description
+      "Initial revision.";
+  }
+
+//  typedef ifs-range-type {
+//    type string {
+//      pattern "A/[0-7]+-A/[0-7]+";
+//    }
+//  }
+
+  typedef interfaceSpeed {
+    type enumeration {
+      enum "10" {
+        tailf:info "Force 10 Mbps operation";
+        value 10;
+      }
+      enum "100" {
+        tailf:info "Force 100 Mbps operation";
+        value 100;
+      }
+      enum "1000" {
+        tailf:info "Force 1000 Mbps operation";
+        value 1000;
+      }
+//      enum "auto" {
+//        tailf:code-name interfaceSpeed-auto;
+//        tailf:info "Enable Speed AUTO configuration";
+//        value 0;
+//      }
+    }
+    default "1000";
+  }
+
+  typedef switchportMode {
+    type enumeration {
+      enum "access" {
+        tailf:code-name switchportMode-access;
+        tailf:info "Set switchport mode to ACCESS unconditionally";
+        value 11;
+      }
+//      enum "general" {
+//        tailf:code-name switchportMode-general;
+//        tailf:info "Set trunking mode to GENERAL unconditionally";
+//        value 10;
+//      }
+      enum "trunk" {
+        tailf:code-name switchportMode-trunk;
+        tailf:info "Set switchport mode to TRUNK unconditionally";
+        value 12;
+      }
+      enum "dot1q-tunnel" {
+        tailf:code-name switchportMode-customer;
+        tailf:info "Set switchport mode to TUNNEL unconditionally";
+        value 15;
+      }
+      enum "private-vlan" {
+        tailf:code-name switchportMode-private-vlan;
+        tailf:info "Set switchport mode to PRIVATE-VLAN unconditionally";
+        value 13;
+      }
+    }
+    default "access";
+  }
+
+  typedef interfaceDot1xAuth {
+    type enumeration {
+      enum "802.1x" {
+       tailf:code-name interfaceDot1xAuth_8021x;
+       tailf:info "802.1X-base authentication";
+       value 1;
+      }
+      enum "mac" {
+       tailf:code-name interfaceDot1xAuth_mac;
+       tailf:info "MAC-Based authentication";
+       value 3;
+      }
+      enum "both" {
+       tailf:code-name interfaceDot1xAuth_both;
+       tailf:info "Both 802.1X and MAC-Based authentication";
+       value 2;
+      }
+//      enum "web" {
+//       tailf:info "WEB-Based authentication";
+//      }
+    }
+    default "802.1x";
+  }
+
+  typedef interfaceDot1xHostMode {
+    type enumeration {
+      enum "single-host" {
+       tailf:info "Enable single-host mode";
+       value 1;
+      }
+      enum "multi-host" {
+       tailf:info "Enable multi-host mode";
+       value 2;
+      }
+//      enum "multi-sessions" {
+//       tailf:info "Enable multiple-sessions mode";
+//       value 3;
+//      }
+    }
+    default "multi-host";
+  }
+  typedef interfaceDot1xPortControl {
+    type enumeration {
+      enum "force-unauthorized" {
+       tailf:info "Allows no traffic";
+       value 1;
+      }
+      enum "auto" {
+       tailf:code-name interfaceDot1xPortControl_auto;
+       tailf:info "Allows only EAPOL traffic until successful authentication";
+       value 2;
+      }
+      enum "force-authorized" {
+       tailf:info "Allows all traffic, requires no authentication";
+       value 3;
+      }
+    }
+    default "force-authorized";
+  }
+  typedef interfaceDuplex {
+    type enumeration {
+//      enum "auto" {
+//       tailf:code-name interfaceDuplex_auto;
+//       tailf:info "Enable AUTO duplex configuration";
+//       value "0";
+//      }
+      enum "full" {
+       tailf:code-name interfaceDuplex_full;
+       tailf:info "Force full duplex operation";
+         value "1";
+      }
+//      enum "half" {
+//       tailf:code-name interfaceDuplex_half;
+//       tailf:info "Force half-duplex operation";
+//       value "2";
+//      }
+    }
+    default "full";
+  }
+
+  grouping acl-policy-map-default-actions {
+    leaf default-action {
+      type enumeration {
+        enum deny-all {
+          tailf:info "Deny forwarding of all unmatched traffic";
+        }
+        enum permit-all {
+          tailf:info "Permit forwarding of all unmatched traffic";
+        }
+      }
+    }
+  }
+
+  grouping rxPacketsCounters {
+    leaf RxPort {
+      tailf:cli-drop-node-name;
+      type string;
+    }
+    leaf InOctets {
+      tailf:cli-drop-node-name;
+      type yang:counter64;
+    }
+    leaf InUcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter64;
+    }
+    leaf InMcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter32;
+    }
+    leaf InBcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter32;
+    }
+  }
+
+  grouping txPacketsCounters {
+    leaf TxPort {
+      tailf:cli-drop-node-name;
+      type string;
+    }
+    leaf OutOctets {
+      tailf:cli-drop-node-name;
+      type yang:counter64;
+    }
+    leaf OutUcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter64;
+    }
+    leaf OutMcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter32;
+    }
+    leaf OutBcastPkts {
+      tailf:cli-drop-node-name;
+      type yang:counter32;
+    }
+  }
+
+  grouping STP {
+    leaf bpdu {
+      tailf:info "Configure BPDU handling when STP is disabled.";
+      tailf:cli-full-command;
+      type enumeration {
+        enum "filtering" {
+        tailf:code-name bpdu-filtering;
+         tailf:info "Specify that when spanning tree is disabled on an "
+               +"interface, BPDU packets would be filtered.";
+        }
+        enum "flooding" {
+        tailf:code-name bpdu-flooding;
+         tailf:info "Specify that when spanning tree is disabled on an "
+               +"interface, untagged BPDU packets would be flooded "
+               +"unconditionally (Without applying VLAN rules), to all "
+               +"ports with spanning tree disabled. Tagged BPDU packets "
+               +"would be filtered.";
+        }
+      }
+      default "flooding";
+    }
+
+    leaf bpduguard {
+      tailf:info "Protect network from unexpected BPDU packets";
+      tailf:cli-full-command;
+      type enumeration {
+        enum disable {
+          tailf:code-name bduguard_disable;
+          tailf:info "Disable BPDU Guard for this interface";
+        }
+        enum enable {
+          tailf:code-name bduguard_enable;
+          tailf:info "Enable BPDU Guard for this interface";
+        }
+      }
+      default disable;
+    }
+    leaf cost {
+      tailf:info "Change an interface's spanning tree port path cost";
+      tailf:cli-full-command;
+      type uint32 {
+        range "1..200000000";
+        tailf:info "<1-200000000>;;  port path cost";
+      }
+    }
+    leaf disable {
+      tailf:info "Disable spanning-tree on an interface";
+      tailf:cli-full-command;
+      type empty;
+    }
+    container guard {
+      tailf:info "Guard the interface";
+      leaf root {
+        tailf:info "Guard the interface from becoming root port";
+        tailf:cli-full-command;
+        type empty;
+      }
+    }
+    leaf link-type {
+      tailf:info "Override the default link-type setting";
+      tailf:cli-full-command;
+      type enumeration {
+        enum "point-to-point" {
+         tailf:info "Specify that the link type of a port is point-to-point";
+        }
+        enum "shared" {
+         tailf:info "Specify that the link type of a port is shared";
+        }
+      }
+    }
+    leaf port-priority {
+      tailf:info "Change an interface's spanning tree port priority";
+      tailf:cli-full-command;
+      type uint8 {
+        range "0|16|32|48|64|80|96|112|128|144|160|176|192|208|224|240";
+        tailf:info "<0-240>;;  port priority in increments of 16";
+      }
+      default 128;
+    }
+    leaf portfast {
+      tailf:info "Allow to move directly to the forwarding state when linkup occurs";
+      tailf:cli-full-command;
+      type enumeration {
+        enum "auto" {
+          value 3;
+          tailf:code-name portfast_auto;
+          tailf:info "Specifies that the software waits for 3 seconds (With "
+                       +"no BPDUs received on the interface) before putting the"
+                       +"interface into the PortFast mode.";
+        }
+        enum "enable" {
+          value 1;
+          tailf:code-name portfast_enable;
+          tailf:info "Enable an interface to move directly to forwarding on link up";
+        }
+        enum "disable" {
+          value 2;
+          tailf:code-name portfast_disable;
+          tailf:info "Disable an interface to move directly to forwarding on link up";
+        }
+      }
+      default "auto";
+    }
+    container mst {
+      tailf:hidden full;
+      tailf:info "Multiple spanning tree";
+        //tailf:cli-sequence-commands;
+        //tailf:cli-compact-syntax;
+        ////tailf:cli-incomplete-command;
+      list mst-list {
+        tailf:cli-drop-node-name;
+        tailf:cli-incomplete-command;
+        tailf:cli-suppress-mode;
+        key "mstid";
+        leaf mstid {
+          tailf:cli-drop-node-name;
+          tailf:cli-incomplete-command;
+          tailf:cli-suppress-range;
+          type uint16 {
+            range "1..15";
+            tailf:info "<1-15>;;  Specify an instance ID";
+          }
+        }
+        leaf cost {
+          tailf:cli-full-command;
+          tailf:info "Change the interface spanning tree path cost for an instance";
+          type uint32 {
+            range "1..200000000";
+            tailf:info "<1-200000000>;;  Change the interface spanning tree path cost for an instance";
+          }
+        }
+        leaf port-priority {
+          tailf:cli-full-command;
+          tailf:info "Change the spanning tree port priority for an instance";
+          type uint32 {
+            range "0|16|32|48|80|96|112|128|144|160|176|192|208|224|240";
+            tailf:info "<0-240>;;  port priority in increments of 16";
+          }
+        }
+      }
+    }
+  }
+
+    grouping ip { 
+      container ip {
+        tailf:info "Interface Internet Protocol config commands";
+        // access-group        Specify access control for packets
+        // accounting          Enable IP accounting on this interface
+
+        // address             Set the IP address of an interface
+        container address {
+            tailf:info "Set the IP address of an interface";
+            presence "Set the IP address of an interface";
+            //tailf:cli-incomplete-command;
+            tailf:cli-delete-when-empty;
+            tailf:cli-show-no;
+            //tailf:cli-full-no;
+
+            choice address-choice {
+                case fixed-case {
+                    container primary {
+                        tailf:cli-drop-node-name;
+                        tailf:cli-sequence-commands;
+                        tailf:cli-compact-syntax;
+                        tailf:cli-incomplete-command;
+                        leaf address {
+                            tailf:cli-incomplete-command;
+                            tailf:cli-drop-node-name;
+                            mandatory true;
+                            type inet:ipv4-address {
+                                tailf:info "H.H.H.H;;IP address";
+                            }
+                        }
+                        leaf mask {
+                            tailf:cli-drop-node-name;
+                            mandatory true;
+                            type inet:ipv4-address {
+                                tailf:info "H.H.H.H;;IP subnet mask";
+                            }
+                        }
+                    }
+                }
+                case dhcp-case {
+                    leaf dhcp {
+                      tailf:hidden full;
+                      tailf:info "IP Address negotiated via DHCP";
+                      type empty;
+                    }
+                }
+              }
+           }
+        container igmp {
+          tailf:info "Internet Group Management Protocol (IGMP)";
+          leaf last-member-query-count {
+            tailf:cli-full-command;
+            tailf:info "To configure the Last Listener Query Count";
+            type uint8 {
+              tailf:info "<1-7>;;  The Last Listener Query Count is the number of
+                       Multicast Address Specific Queries sent before the
+                       router assumes there are no local listeners.The Last
+                       Listener Query Count is also the number of Multicast
+                       Address and Source Specific Queries sent before the
+                       router assumes there are no listeners for a particular
+                       source.Default value: [Robustness Variable].";
+              range "1..7";
+            }
+          }
+          leaf last-member-query-interval {
+            tailf:cli-full-command;
+            tailf:info "To configure the Max Response Time inserted into
+                       Group-Specific Queries sent in response to Leave Group
+                       messages";
+            type uint16 {
+              tailf:info "<100-25500>;;  enter the max response time (in milliseconds)";
+              range "100..25500";
+            }
+          }
+          leaf query-interval {
+            tailf:cli-full-command;
+            tailf:info "To configure the frequency at which the software sends
+                       Internet Group Management Protocol (IGMP) host query";
+            type uint16 {
+              tailf:info "<30-18000>;;  Frequency, in seconds, at which to send IGMP host
+                       query messages. It can be a number from 30 to 18000.
+                       The default is 125 seconds.";
+              range "30..18000";
+            }
+          }
+          leaf robustness {
+            tailf:cli-full-command;
+            tailf:info "To configure the Internet Group Management Protocol
+                       (IGMP) robustness variable.";
+            type uint8 {
+              tailf:info "<1-7>;;  The number of expected packet loss on a link";
+              range "1..7";
+            }
+          }
+          leaf query-max-response-time {
+            tailf:cli-full-command;
+            tailf:info "To configure the Maximum Response Delay";
+            type uint8 {
+              tailf:info "<5..20>;;  The Maximum Response Delay used to calculate the
+                       Maximum Response Code inserted into the periodic
+                       General Queries.  Default value:10 seconds";
+              range "5..20";
+            }
+          }
+//          leaf version {
+//            tailf:cli-full-command;
+//            tailf:info "To configure which version of Internet Group
+//                       Management Protocol (IGMP) the router uses";
+//            type uint8 {
+//              tailf:info "<1-3>;;  To configure which version of Internet Group
+//                       Management Protocol (IGMP) the router uses";
+//              range "1..3";
+//            }
+//          }
+        }
+        container igmp-proxy {
+          tailf:info "IGMP proxy configurations";
+          tailf:hidden full;
+          container downstream {
+            tailf:info "Enable downstream protection on interfac";
+            container protected {
+              tailf:info "Enable downstream protection on interface";
+              leaf interface {
+                tailf:info "Enable downstream protection on interface";
+                type enumeration {
+                  enum "enable" {
+                    tailf:code-name igmp-proxy_enable;
+                    tailf:info "Downstream interface protection on the interface is enabled";
+                  }
+                  enum "disable" {
+                    tailf:code-name igmp-proxy_disable;
+                    tailf:info "Downstream interface protection on the interface is disabled";
+                  }
+                }
+              }
+            }
+          }
+        }
+        container multicast {
+          tailf:info "IP multicast interface commands";
+          tailf:hidden full;
+          leaf ttl-threshold {
+            tailf:info "TTL threshold for multicast packets";
+            type uint8 {
+              tailf:info "<0..255>;;  TTL threshold";
+              range "0..255";
+            }
+          }
+        }
+      }
+    }
+
+    grouping intf-switchport-info {
+        leaf Port {
+          type string;
+        }
+        leaf switchport-mode {
+          type string;
+        }
+        leaf adminstrative-mode {
+          type string;
+        }
+        leaf operational-mode {
+          type string;
+        }
+        leaf access-mode-vlan {
+          type string;
+        }
+        leaf trunk-native-mode-vlan {
+          type string;
+        }
+        leaf trunking-vlans {
+          type string;
+        }
+        leaf Privatevlan-promiscuous-association-primary-VLAN {
+          type string;
+        }
+        leaf Privatevlan-promiscuous-association-secondary-VLAN {
+          type string;
+        }
+        leaf Privatevlan-host-association-primary-VLAN {
+          type string;
+        }
+        leaf Privatevlan-host-association-secondary-VLAN {
+          type string;
+        }
+    }
+
+  grouping protected-ports-info {
+        leaf Port {
+          type string;
+        }
+        leaf State {
+          type string;
+        }
+        leaf Community {
+          type string;
+        }
+  }
+
+
+  grouping inline-status-info {
+        leaf Port {
+          type string;
+        }
+        leaf Admin {
+          type string;
+        }
+        leaf Oper {
+          type string;
+        }
+        leaf Power {
+          type string;
+        }
+        leaf Class {
+          type string;
+        }
+        leaf Device {
+          type string;
+        }
+        leaf Priority {
+          type string;
+        }
+  }
+
+//  grouping inline-status {
+//      container inline-status {
+//        config false;
+//        tailf:callpoint cp-inline-status;
+//        tailf:info "Show Interface power inline status";
+//        uses inline-status-info;
+//      }
+//  }
+
+  grouping intf-status-info {
+        leaf Port {
+          type string;
+        }
+        leaf Type {
+          type string;
+        }
+        leaf Link {
+          type enumeration {
+            enum "up" {
+              value "1";
+            }
+            enum "down" {
+              value "2";
+            }
+          }
+        }
+        leaf Speed {
+          type string;
+        }
+        leaf MediaType {
+          type string;
+        }
+        leaf macaddr {
+          type string;
+        }
+        leaf MTU {
+          type uint16;
+        }
+  }
+
+  grouping intf-pch-status-info {
+        leaf Port {
+          type string;
+        }
+        leaf Type {
+          type string;
+        }
+//        leaf Admin-state {
+//          type enumeration {
+//            enum "up" {
+//              value "1";
+//            }
+//            enum "down" {
+//              value "2";
+//            }
+//          }
+//        }
+        
+        leaf Speed {
+          type string;
+        }
+        leaf Link {
+//          type enumeration {
+//            enum "up" {
+//              value "1";
+//            }
+//            enum "down" {
+//              value "2";
+//            }
+//          }
+            type string;
+        }
+        leaf Active-ports {
+          type string;
+        }
+        leaf Non-candidate-ports {
+          type string;
+        }
+  }
+
+
+//  grouping intf-status {
+//      container status {
+//        config false;
+//        tailf:callpoint cp-if-status;
+//        tailf:info "Show Interface Status";
+//        uses intf-status-info;
+//      }
+//  }
+
+  grouping intf-config-info {
+        leaf Port {
+          type string;
+        }
+        leaf Type {
+          type string;
+        }
+        leaf Duplex {
+          type string;
+        }
+        leaf Speed {
+          type string;
+        }
+        leaf Neg {
+          type string;
+        }
+        leaf FlowCtrl {
+          type string;
+        }
+        leaf Admin-State {
+          type string;
+        }
+        leaf Mdix-Mode {
+          type string;
+        }
+  }
+
+  grouping intf-pch-config-info {
+        leaf Port {
+          type string;
+        }
+        leaf Type {
+          type string;
+        }
+        leaf Speed {
+          type string;
+        }
+        leaf Neg {
+          type string;
+        }
+        leaf FlowCtrl {
+          type string;
+        }
+        leaf Admin-State {
+          type string;
+        }
+  }
+
+  grouping intf-rmon-info {
+        leaf Port {
+          type string;
+        }
+        leaf DropEventCnt {
+          type uint32;
+        }
+        leaf RxPktByteCnt {
+          type uint32;
+        }
+        leaf RxPktCnt {
+          type uint32;
+        }
+        leaf RxMPktCnt {
+          type uint32;
+        }
+        leaf RxBPktCnt {
+          type uint32;
+        }
+        leaf CRCErrCnt {
+          type uint32;
+        }
+        leaf UnderSizePktCnt {
+          type uint32;
+        }
+        leaf OverSizePktCnt {
+          type uint32;
+        }
+        leaf FragmentCnt {
+          type uint32;
+        }
+        leaf JabberCnt {
+          type uint32;
+        }
+        leaf CollisionCnt {
+          type uint32;
+        }
+        leaf FrameOf64BytesCnt {
+          type uint32;
+        }
+        leaf FrameOf65To127BytesCnt {
+          type uint32;
+        }
+        leaf FrameOf128To255BytesCnt {
+          type uint32;
+        }
+        leaf FrameOf256To511BytesCnt {
+          type uint32;
+        }
+        leaf FrameOf512To1023BytesCnt {
+          type uint32;
+        }
+        leaf FrameOf1024To1518BytesCnt {
+          type uint32;
+        }
+  }
+
+//  grouping intf-rmon {
+//      container rmon {
+//        config false;
+//        tailf:callpoint cp-if-rmon-stat;
+//        tailf:info "Show Interface RMON statistics";
+//        uses intf-rmon-info;
+//      }
+//  }
+
+  grouping intf-counters-info {
+        leaf Port {
+          type string;
+        }
+        leaf InUcastPkts {
+          type uint64 {
+            tailf:info "Received unicast packet counts";
+          }
+        }
+        leaf InMcastPkts {
+          type uint64 {
+            tailf:info "Received multicast packet counts";
+          }
+        }
+        leaf InBcastPkts {
+          type uint64 {
+            tailf:info "Received broadcast packet counts";
+          }
+        }
+        leaf InOctets {
+          type uint64 {
+            tailf:info "Received octet counts";
+          }
+        }
+        leaf OutUcastPkts {
+          type uint64 {
+            tailf:info "Transmitted unicast packet counts";
+          }
+        }
+        leaf OutMcastPkts {
+          type uint64 {
+            tailf:info "Transmitted multicast packet counts";
+          }
+        }
+        leaf OutBcastPkts {
+          type uint64 {
+            tailf:info "Transmitted broadcast packet counts";
+          }
+        }
+        leaf OutOctets {
+          type uint64 {
+            tailf:info "Transmitted octet counts";
+          }
+        }
+  }
+
+//  grouping intf-counters {
+//      container counters {
+//        config false;
+//        tailf:callpoint cp-if-counters;
+//        tailf:info "Show Interface counters";
+//        uses intf-counters-info;
+//      }
+//  }
+
+  grouping giga-pch {
+      leaf description {
+        tailf:info "Interface specific description";
+        tailf:cli-full-command;
+        type string {
+          pattern  "[0-9a-zA-Z].*";
+          length "1..64";
+          tailf:info "LINE;; Up to 64 characters describing this interface";
+        }
+      }
+      container bridge {
+        tailf:info "Bridge configuration subcommand";
+        container multicast {
+          tailf:info "Multicast Bridging configuration commands";
+          leaf unregistered {
+            tailf:info "Enable filtering of unregistered multicast for a given egress port";
+            type enumeration {
+              enum "forwarding" {
+                tailf:code-name mc-forwarding;
+                tailf:info "Egress port to forward unregistered multicast frames";
+              }
+              enum "filtering" {
+                tailf:code-name mc-filtering;
+                tailf:info "Egress port to filter unregistered multicast frames";
+              }
+            }
+            default "forwarding";
+          }
+        }
+        container unicast {
+          tailf:info "unicast configuration subcommand";
+          leaf unknown {
+            tailf:info "unknown configuration subcommand";
+            type enumeration {
+              enum "forwarding" {
+                tailf:code-name uc-forwarding;
+                tailf:info "Forward unregistered unicast packets";
+              }
+              enum "filtering" {
+                tailf:code-name uc-filtering;
+                tailf:info "Filter unregistered unicast packets";
+              }
+            }
+            default "forwarding";
+          }
+        }
+      }
+      container flowcontrol {
+        tailf:info "Configure flow operation.";
+        leaf receive {
+          tailf:info "Configure receiving flow operation";
+          tailf:cli-full-command;
+          type enumeration {
+            enum off {
+              tailf:code-name flowcontrol_receive_off;
+              tailf:info "Disable flow-control packets on port";
+            }
+            enum on {
+              tailf:code-name flowcontrol_receive_on;
+              tailf:info "Enable flow-control packets on port";
+            }
+//            enum "auto" {
+//              tailf:code-name flowcontrol_receive_auto;
+//              tailf:info "Enable auto flow-control packets on port";
+//            }
+          }
+          default off;
+        }
+      }
+      leaf negotiation {
+        tailf:info "Enable auto negotiation";
+        tailf:cli-full-command;
+        type enumeration {
+          enum auto {
+            tailf:info "Auto negotiate speed and duplex mode";
+          }
+        }
+        //default auto;
+      }
+      container qos {
+        tailf:info "Configure Qos settings";
+        leaf cos {
+          tailf:info "Configure the default CoS value for a port";
+          type uint8 {
+            tailf:info "<0-7>;;  Specify the default VPT value";
+            range "0..7";
+          }
+          default 0;
+        }
+      }
+      leaf shutdown {
+        tailf:info "Shutdown the selected interface";
+        tailf:cli-full-command;
+        tailf:cli-show-no;
+        type empty;
+      }
+      container snmp {
+        tailf:hidden full;
+        tailf:info "Modify SNMP interface parameters";
+        container trap {
+          tailf:info "Allow a specific SNMP trap";
+          leaf link-status {
+            tailf:info "Allow SNMP LINKUP and LINKDOWN traps";
+            type empty;
+          }
+        }
+      }
+      leaf speed {
+        tailf:info "Configure speed operation";
+        tailf:cli-full-command;
+        type interfaceSpeed;
+      }
+      container spanning-tree {
+        tailf:info "Spanning Tree Subsystem";
+        uses STP;
+      }
+      container service-acl {
+        tailf:hidden full;
+        tailf:info "Apply an ACL to a particular interface";
+        list input {
+          tailf:cli-delete-when-empty;
+          tailf:cli-suppress-mode;
+          tailf:info "Specify the input ACL";
+          key input-acl-name;
+          leaf input-acl-name {
+            tailf:cli-suppress-range;
+            type string {
+              tailf:info "WORD;; Name of ACL to be attached";
+            }
+          }
+          uses acl-policy-map-default-actions;
+        }
+        list output {
+          tailf:cli-delete-when-empty;
+          tailf:cli-suppress-mode;
+          tailf:info "Specify the output ACL";
+          key output-acl-name;
+          leaf output-acl-name {
+            tailf:cli-suppress-range;
+            type string {
+              tailf:info "WORD;; Name of ACL to be attached";
+            }
+          }
+          uses acl-policy-map-default-actions;
+        }
+      }
+      container service-policy {
+        tailf:hidden full;
+        tailf:info "Apply a policy map to a particular interface";
+        list input {
+          tailf:cli-delete-when-empty;
+          tailf:cli-suppress-mode;
+          tailf:info "Specify the input policy map";
+          key input-policy-name;
+          leaf input-policy-name {
+            tailf:cli-suppress-range;
+            type string {
+              tailf:info "WORD;; Name of policy map to be attached";
+            }
+          }
+          uses acl-policy-map-default-actions;
+        }
+        list output {
+          tailf:cli-delete-when-empty;
+          tailf:cli-suppress-mode;
+          tailf:info "Specify the output policy map";
+          key output-policy-name;
+          leaf output-policy-name {
+            tailf:cli-suppress-range;
+            type string {
+              tailf:info "WORD;; Name of policy map to be attached";
+            }
+          }
+          uses acl-policy-map-default-actions;
+        }
+      }
+      container switchport {
+         tailf:info "Set switching mode characteristics";
+         container access {
+             tailf:info "Set access mode characteristics of the interface";
+             leaf vlan {
+               tailf:info "Set VLAN when interface is in access mode";
+               type vlan-type;
+               default 1;
+             }
+         }
+         container dot1q-tunnel {
+           tailf:info "The port is connected to customer equipment";
+           leaf vlan {
+               tailf:info "vlan";
+               type vlan-type;
+           }
+         }
+         container general {
+           tailf:hidden full;
+           tailf:info "Set general mode characteristics of the interface";
+           container ingress-filtering {
+           tailf:info "ingress filtering";
+             leaf disable {
+               tailf:info "disable";
+               type empty;
+             }
+           }
+           leaf acceptable-frame-type {
+             tailf:info "acceptable frame type";
+             tailf:cli-full-command;
+             type enumeration {
+               enum all {
+                 tailf:code-name acceptable-frame-type_all;
+                 tailf:info "tagged and untagged frames";
+               }
+               enum tagged-only {
+                 tailf:code-name acceptable-frame-type_tagged_only;
+                 tailf:info "tagged frames only";
+               }
+               enum untagged-only {
+                 tailf:code-name acceptable-frame-type_untagged_only;
+                 tailf:info "untagged frames only";
+               }
+             }
+           }
+           container allowed {
+             tailf:info "Set allowed VLAN characteristics when interface is in general mode";
+             container tagged {
+               tailf:info "Tagged packets";
+               leaf-list vlan {
+                 tailf:cli-range-list-syntax;
+                 tailf:info "Configure switchport VLAN properties";
+                 type vlan-type;
+               }
+             }
+             container untagged {
+               tailf:info "Untagged packets (default)";
+               leaf-list vlan {
+                 tailf:cli-range-list-syntax;
+                 tailf:info "Configure switchport VLAN properties";
+                 type vlan-type;
+               }
+             }
+           }
+           container forbidden {
+             tailf:info "Forbidden VLAN membership";
+             leaf-list vlan {
+               tailf:cli-full-command;
+               tailf:info "VLAN list";
+               tailf:cli-range-list-syntax;
+               type vlan-type;
+             }
+           }
+           leaf pvid {
+             tailf:info "Configure the PVID when the interface is in general mode";
+             type vlan-type;
+           }
+         }
+         leaf mode {
+           tailf:info "Set trunking mode of the interface";
+           tailf:cli-full-command;
+           type switchportMode;
+         }
+         container private-vlan {
+           tailf:info "Set the private VLAN configuration";
+           container host-association {
+             tailf:cli-sequence-commands;
+             tailf:cli-compact-syntax;
+             tailf:cli-full-no;
+             tailf:info "Set the private VLAN host association";
+             leaf host-pri-vlan {
+               tailf:cli-drop-node-name;
+               tailf:cli-incomplete-command;
+               type uint16 {
+                 range "1..4094";
+                 tailf:info "<1..4094>;;  The VLAN ID of the primary VLAN";
+               }
+             }
+             leaf host-sec-vlan {
+               tailf:cli-drop-node-name;
+               tailf:cli-full-command;
+               type uint16 {
+                 range "1..4094";
+                 tailf:info "<1..4094>;;  The VLAN ID of the secondary VLAN";
+              }
+             }
+           }
+           list mapping {
+             //tailf:cli-compact-syntax;
+             tailf:cli-delete-when-empty;
+             tailf:cli-suppress-mode;
+             //tailf:cli-incomplete-no;
+             tailf:info "Set the private VLAN promiscuous mapping";
+             key mapping-pri-vlan;
+             leaf mapping-pri-vlan {
+               tailf:cli-drop-node-name;
+               tailf:cli-suppress-range;
+               tailf:cli-full-no;
+               tailf:info "<1-2349>|<2450-4093>;;    The VLAN ID of the primary VLAN";
+               type vlan-type;
+             }
+             leaf-list mapping-sec-vlan {
+               tailf:cli-drop-node-name;
+               tailf:cli-range-list-syntax;
+               //tailf:info "WORD;;  Secondary VLAN IDs of the private VLAN promiscuous port mapping";
+               tailf:info "<1-2349>|<2450-4093>;;    The VLAN ID of the secondary VLAN";
+
+               type vlan-type;
+             }
+           }
+         }  
+//         container private-vlan {
+//           tailf:info "Set the private VLAN configuration";
+//           list mapping {
+//             tailf:cli-incomplete-command;
+//             tailf:cli-suppress-mode;
+//             tailf:info "configure the membership of promiscuous port within
+//                         the associated primary-secondary VLANs";
+//             key "pri-v";
+//             leaf pri-v {
+//               tailf:cli-suppress-range;
+//               tailf:info "The VLAN ID of the primary VLAN";
+//               type vlan-type;
+//             }
+//             leaf-list ids1 {
+//               tailf:cli-drop-node-name;
+//               tailf:cli-range-list-syntax;
+//               tailf:info "Specify one or more associated secondary VLANs";
+//               type vlan-type;
+//             }
+//           }
+//           list host-association {
+//             tailf:info "configure the membership of host port within the
+//                     associated primary-secondary VLANs";
+//             tailf:cli-suppress-mode;
+//             key "pri-vlan";
+//             leaf pri-vlan {
+//               tailf:cli-suppress-range;
+//               //tailf:cli-full-command;
+//               tailf:cli-incomplete-command;
+//               tailf:info "<1-2349>|<2450-4093>;;    The VLAN ID of the primary VLAN";
+//               type vlan-type;
+//             }
+//             leaf sec-vlan {
+//               tailf:cli-drop-node-name;
+//               tailf:cli-full-command;
+//               tailf:info "<1-2349>|<2450-4093>;;    The VLAN ID of the secondary VLAN";
+//               type vlan-type;
+//             }
+//           }
+//         }
+            leaf community {
+            tailf:cli-full-command;
+            tailf:info "associates a protected port with a community
+                        active when port is protected";
+            type uint8 {
+              range "1..29";
+              tailf:info "<1-29>;;  specify community number";
+            }
+          }
+         leaf protected-port {
+           tailf:info "Configure an interface to be a protected port";
+           tailf:cli-full-command;
+           type empty;
+         }
+         container trunk {
+           tailf:info "Set trunking mode characteristics of the interface";
+           container native {
+             tailf:info "Set trunking native characteristics when interface is in trunking"
+                        +" mode";
+             leaf vlan {
+                 tailf:info "Set native VLAN when interface is in turnking mode";
+                 type vlan-type;
+                 default 1;
+             }
+           }
+           container allowed {
+             tailf:info "Set allowed VLAN characteristics when interface is in trunking mode";
+             container vlan {
+               //tailf:cli-full-no;
+               tailf:info "Configure VLANs in a trunk port";
+                 choice vlan-choice {
+                   leaf-list ids {
+                     tailf:cli-full-command;
+                     tailf:cli-drop-node-name;
+                     tailf:cli-range-list-syntax;
+                     tailf:info "Specify the list of allowed VLANs";
+                     type vlan-type;
+                   }
+                   leaf all {   
+                     tailf:hidden full;
+                     tailf:cli-full-command;
+                     type empty;
+                   }
+                   leaf fixed {
+                     tailf:hidden full;
+                     tailf:cli-full-command;
+                     tailf:cli-drop-node-name;
+                     type enumeration {
+                       enum all {
+                         tailf:code-name fixed_all;
+                         tailf:info "All except reserved VLANs";
+                       }
+                       enum none {
+                         tailf:code-name fixed_none;
+                         tailf:info "No VLANs";
+                       }
+                     }
+                  }
+                   leaf-list except {
+                     tailf:hidden full;
+                     tailf:cli-full-command;
+                     tailf:cli-range-list-syntax;
+                     tailf:info " all VLANs except the following";
+                     type uint16 {
+                       range "1..4094";
+                     }
+                   }
+                 }
+//                 leaf-list add {
+//                   tailf:cli-full-command;
+//                   tailf:cli-range-list-syntax;
+//                   tailf:info " add VLANs to the current list";
+//                   type vlan-type;
+//                 }
+//                 leaf-list remove {
+//                   tailf:cli-full-command;
+//                   tailf:cli-range-list-syntax;
+//                   tailf:info " remove VLANs from the current list";
+//                   type vlan-type;
+//                 }
+               }
+             }
+           }
+         }
+       container traffic-shape {
+         tailf:hidden full;
+         tailf:info "Configure shaper on an egress traffic";
+         container port {
+           tailf:cli-sequence-commands;
+           tailf:cli-compact-syntax;
+           tailf:info "Configure shaper on an egress port";
+           leaf cir {
+             tailf:cli-drop-node-name;
+             tailf:cli-incomplete-no;
+             type uint32 {
+//TODO, change the value for Gigabit rate, this is for 10G rate
+               range "64..10000000";
+               tailf:info "<64-10000000>;;  The average traffic rate in Kbps";
+             }
+           }
+           leaf cbs {
+             tailf:cli-drop-node-name;
+             tailf:cli-optional-in-sequence;
+             type uint32 {
+//TODO,hange the value for Gigabit rate, this is for 10G rate
+               range "4096..16762902";
+               tailf:info "<4096-16762902>;;  Specify the excess burst size in bytes";
+             }
+           }
+         }
+         list queue {
+           tailf:info "Configure shaper on an egress queue";
+           tailf:cli-delete-when-empty;
+           tailf:cli-sequence-commands;
+           tailf:cli-compact-syntax;
+           tailf:cli-suppress-mode;
+           //tailf:cli-incomplete-no;
+           tailf:cli-incomplete-command;
+           max-elements 8;
+           key qid;
+           leaf qid {
+             tailf:cli-suppress-range;
+             type uint8 {
+               range "1..8";
+               tailf:info "<1-8>;;  Specify a shaper for the specified queue";
+             }
+           }
+           leaf cir {
+             tailf:cli-drop-node-name;
+             tailf:cli-incomplete-no;
+             type uint32 {
+//TODO, change the value for Gigabit rate, this is for 10G rate
+               range "64..10000000";
+               tailf:info "<64-10000000>;;  The average traffic rate in Kbps";
+             }
+           }
+           leaf cbs {
+             tailf:cli-drop-node-name;
+             tailf:cli-optional-in-sequence;
+             type uint32 {
+//TODO,hange the value for Gigabit rate, this is for 10G rate
+               range "4096..16762902";
+               tailf:info "<4096-16762902>;;  Specify the excess burst size in bytes";
+             }
+           }
+         }
+       }
+       container port {
+         tailf:hidden full;
+         tailf:info "Set port definition";
+         container security {
+           tailf:info "Configure an interface to be a secure port";
+           leaf max {
+             tailf:info "Maximum number of addresses that can be learned on the interface";
+             type uint16 {
+               range "0..256";
+               tailf:info "Maximum number of addresses that can be learned on the interface";
+             }
+           }
+           container mode {
+             tailf:info "Configure an interface learning limitation mode";
+             leaf secure {
+               tailf:cli-full-command;
+               tailf:info "Delete the current dynamic MAC addresses associated
+                           with the port. Learn up to the maximum addresses
+                           allowed on the port. Relearning and aging are disabled";
+               type enumeration {
+                 enum permanent {
+                   tailf:code-name permanent_intf;
+                   tailf:info "Mac addresses are kept in active configuration";
+                 }
+                 enum delete-on-reset {
+                   tailf:code-name delete_on_reset_intf;
+                   tailf:info "Mac addresses are deleted on reset";
+                 }
+               }
+             }
+             leaf lock {
+               tailf:cli-full-command;
+               tailf:info "Keep the current dynamic MAC addresses associated with
+                         the port. Learning, relearning and aging are disabled";
+               type empty;
+             }
+             leaf max-addresses {
+               tailf:cli-full-command;
+               tailf:info "Delete the current dynamic MAC addresses associated
+                           allowed on the port. Relearning and aging are enabled";
+               type empty;
+             }
+             leaf regular {
+               tailf:cli-full-command;
+               tailf:info "Allowed unlimited learning of dynamic addresses";
+               type empty;
+             }
+           }
+           container routed {
+             tailf:info "Configure L3";
+             leaf secure-address {
+               tailf:cli-full-command;
+               tailf:info "Specify a secure MAC address";
+               type yang:mac-address {
+                 tailf:info "EE:EE:EE:EE:EE:EE;;  48 bit mac address";
+               }
+             }
+           }
+           leaf discard {
+             tailf:info "Discard packet with unlearned source address and do not learn the address";
+             tailf:cli-full-command;
+             type empty;
+           }
+         }
+       }
+  }
+
+  grouping vlan {
+    list vlan {
+      tailf:info "Catalyst Vlans";
+      tailf:cli-custom-range-enumerator "vlan-enum" {
+          tailf:cli-completion-id ide;
+      }
+      tailf:cli-mode-name "config-switch-if";
+      key "vlan-id";
+      tailf:cli-full-command;
+      leaf vlan-id {
+        type vlan-type;
+      }
+
+      leaf remote-span {
+        tailf:info "Configure the VLAN as an RSPAN VLAN";
+        tailf:cli-full-command;
+        type empty;
+      }
+
+      container dot1x {
+        tailf:info "802.1X Guest Valn";
+          leaf guest-vlan {
+            tailf:cli-full-command;
+            tailf:info "Desginate this VLAN as Guest vlan ";
+            type empty;
+          }
+          leaf auth-not-req {
+            tailf:cli-full-command;
+            tailf:info "Unauthenticated Vlan";
+            type empty;
+          }
+      }
+//      leaf description {
+//        tailf:info "Interface specific description";
+//        tailf:cli-full-command;
+//        type string;
+//      }
+      leaf name {
+        tailf:info "LAN Name command";
+        type string {
+          length "1..32";
+          tailf:info "WORD;; Up to 32 characters lan name)";
+        }
+      }
+      uses ip;
+      leaf shutdown {
+//        tailf:hidden full;
+        tailf:info "Shutdown the selected interface";
+        tailf:cli-full-command;
+        type empty;
+      }
+      container snmp {
+        tailf:hidden full;
+        tailf:info "Modify SNMP interface parameters";
+        container trap {
+          tailf:info "Allow a specific SNMP trap";
+          leaf link-status {
+            tailf:info "Allow SNMP LINKUP and LINKDOWN traps";
+            type empty;
+          }
+        }
+     }
+     container private-vlan {
+       tailf:info "private VLAN command";
+       leaf-list association {
+         tailf:cli-full-no;
+         tailf:cli-full-command;
+         tailf:info "associate primary vlan with secondary vlans";
+         tailf:cli-range-list-syntax;
+         type vlan-type;
+       }
+       leaf primary {
+         tailf:info "Designate the VLAN as Primary VLAN";
+         tailf:cli-full-command;
+         type empty;
+       }
+       leaf isolated {
+         tailf:info "Designate the VLAN as Isolated VLAN";
+         tailf:cli-full-command;
+         type empty;
+       }
+       leaf community {
+         tailf:info "Designate the VLAN as Community VLAN";
+         tailf:cli-full-command;
+         type empty;
+       }
+     }
+     container service-acl {
+       tailf:hidden full;
+       tailf:info "Apply an ACL to particular interface";
+       list input {
+         tailf:cli-delete-when-empty;
+         tailf:cli-suppress-mode;
+         tailf:info "Specify the input ACL";
+         key input-acl-name;
+         leaf input-acl-name {
+           tailf:cli-suppress-range;
+           type string {
+             tailf:info "WORD;; Name of ACL to be attached";
+           }
+         }
+         uses acl-policy-map-default-actions;
+       }
+     } 
+   }
+  }
+
+  grouping gigabitEthernet {
+    list gigabitEthernet {
+      max-elements 8;
+//      tailf:cli-custom-range-enumerator "vlan-enum" {
+//          tailf:cli-completion-id gige;
+//      }
+      tailf:cli-allow-join-with-key {
+        tailf:cli-display-joined;
+      }
+      tailf:cli-mode-name "config-switch-if";
+      tailf:info "GigabitEthernet IEEE 802.3z";
+      //tailf:cli-suppress-mode;
+      key "name";
+      leaf name {
+        tailf:cli-suppress-range;
+        //tailf:cli-drop-node-name;
+        tailf:cli-allow-range;
+        mandatory true;
+        type ge-interface-type;
+      }
+      uses giga-pch;
+      list channel-group {
+        //tailf:hidden full;
+        max-elements 1;
+        tailf:info "Etherchannel/port bundling configuration";
+        tailf:cli-incomplete-command;
+        tailf:cli-suppress-mode;
+        tailf:cli-full-no;
+        key "cid";
+        leaf cid {
+          tailf:cli-drop-node-name;
+          //tailf:cli-full-command;
+          tailf:cli-incomplete-command;
+          tailf:cli-incomplete-no;
+          tailf:cli-suppress-range;
+          type port-channel-type;
+        }
+        leaf mode {
+          tailf:info "Etherchannel Mode of the interface";
+          tailf:cli-full-command;
+          type enumeration {
+            enum on {
+              tailf:code-name cg_mode_on;
+              tailf:info "Enable Etherchannel only ";
+              value "1";
+            }
+            enum "auto" {
+              tailf:code-name cg_mode_auto;
+              tailf:info "Enable LACP unconditionally";
+              value "2";
+            }
+          }
+        }
+      }
+      container authentication {
+        tailf:info "Authentication methods on a port";
+        leaf open {
+          type empty;
+        }
+      }
+      container dot1x {
+        tailf:info "Configure dot1x operation.";
+        leaf authentication {
+          tailf:info "Configure dot1x authentication method";
+          tailf:cli-full-command;
+          type interfaceDot1xAuth;
+        }
+        container guest-vlan {
+          tailf:info "Interface guest vlan configuration";
+          leaf enable {
+            tailf:info "Guest vlan enable on this interface";
+            tailf:cli-full-command;
+            type empty;
+          }
+        }
+        leaf max-eap-req {
+          tailf:info "Maxium number of EAP requests";
+          tailf:cli-full-command;
+          type uint8 {
+            range "1..10";
+            tailf:info "<1-10>;;  EAP requests retry ";
+          }
+          default 2;
+        }
+        leaf max-hosts {
+          tailf:hidden full;
+          tailf:info "Maxium number of hosts allowed on this interface";
+          tailf:cli-full-command;
+          type uint32 {
+            range "1..4294967295";
+            tailf:info "<1-4294967295>;;  Any number greater than 0 ";
+          }
+        }
+        leaf host-mode {
+          tailf:info "Configure dot1x host mode";
+          tailf:cli-full-command;
+          type interfaceDot1xHostMode;
+        }
+        leaf port-control {
+          tailf:info "Enable manaul control of the port authroization state";
+          tailf:cli-full-command;
+          type interfaceDot1xPortControl;
+        }
+        leaf reauthentication {
+          tailf:info "Enable authentication method on the port";
+          tailf:cli-full-command;
+          type empty;
+        }
+        leaf violation-mode {
+          tailf:info "Configure the action to be taken when violation is detected";
+          tailf:cli-full-command;
+          type enumeration {
+            enum protect {
+              tailf:code-name violation_protect;
+              tailf:info "Discard frames with source addresses not the
+                         supplicant address.";
+              value 1;
+            }
+            enum restrict {
+              tailf:code-name violation_restrict;
+              tailf:info "Violation frames would be forwarded but their
+                          source address would not be learned";
+              value 2;
+            }
+            enum shutdown {
+              tailf:code-name violation_shutdown;
+              tailf:info "Discard frames with source addresses not the
+                         supplicant address and shutdown the port";
+              value 3;
+            }
+          }
+          default protect;
+        }
+        container timeout {
+          tailf:info "Set various timeouts";
+          leaf quiet-period {
+            tailf:cli-full-command;
+            tailf:info "Set the Number of seconds to wait following a failed
+                       authentication exchange (Change the default value only
+                       to adjust for unusual circumstances)";
+            type uint16 {
+              range "10..65535";
+              tailf:info "<10-65535>;;  Quiet period";
+            }
+            default 60;
+          }
+          leaf reauth-period {
+            tailf:cli-full-command;
+            tailf:info "Number of seconds between re-authentication attempts.
+                       The range is 300 to 4294967295";
+            type uint32 {
+              range "300..4294967295";
+              tailf:info "<300-4294967295>;;  Re-authentication period";
+            }
+            default 3600;
+          }
+          leaf server-timeout {
+            tailf:cli-full-command;
+            tailf:info "Set the number of seconds to wait for a retransmission
+                       of packets to the authentication server";
+            type uint32 {
+              range "1..65535";
+              tailf:info "<1-65535>;;  Server timeout";
+            }
+            default 30;
+          }
+          leaf supp-timeout {
+            tailf:cli-full-command;
+            tailf:info "Set the number of seconds to wait for a retransmission
+                       of EAP-request frame to the client. (Change the
+                       default value only to adjust for unusual circumstances)";
+            type uint32 {
+              range "1..65535";
+              tailf:info "<1-65535>;;  Supplicant timeout";
+            }
+            default 30;
+          } 
+          leaf tx-period {
+            tailf:cli-full-command;
+            tailf:info "Set the number of seconds to wait for a response to an
+                       EAP-request/identity before resending the request.
+                       (Change the default value only to adjust for unusual";
+            type uint32 {
+              range "30..65535";
+              tailf:info "<30-65535>;;  Tx period";
+            }
+            default 30;
+          }
+        }
+      }
+      leaf duplex {
+        tailf:info "Configure duplex operation";
+        tailf:cli-full-command;
+        type interfaceDuplex;
+      }
+
+      container mdix {
+        tailf:info "Set Media Dependent Interface with Crossover";
+        leaf mdix-cross {
+          tailf:cli-drop-node-name;
+          type enumeration {
+            enum "auto" {
+              tailf:code-name mdix_auto;
+              tailf:info "Enable automatic MDI crossover detection on this interface";
+            }
+            enum "on" {
+              tailf:code-name mdix_on;
+              tailf:info "Enable MDIX";
+            }
+          }
+          default "auto";
+        }
+      }
+      container lacp {
+        tailf:info "Interface IEEE 802.3 link aggregation commands";
+        leaf port-priority {
+          tailf:cli-full-command;
+          tailf:info "IEEE 802.3 link aggregation port priority";
+          type uint32 {
+            range "1..65535";
+            tailf:info "<1-65535>;;  Port-priority value";
+          }
+          default 1;
+        }
+        leaf timeout {
+          tailf:cli-full-command;
+          tailf:info "IEEE 802.3 link aggregation port timeout";
+          type enumeration {
+            enum "short" {
+              tailf:info "Short timeout value";
+              value "1";
+            }
+            enum "long" {
+              tailf:info "Long timeout value";
+              value "2";
+            }
+          }
+          default "long";
+        }
+      }
+      container power {
+        tailf:info "Configure the administrative mode of the inline power";
+        container inline {
+          tailf:info "Inline power";
+          leaf device-discovery {
+            //tailf:hidden full;
+            tailf:cli-drop-node-name;
+            tailf:cli-full-command;
+            type enumeration {
+              enum "auto" {
+                tailf:code-name power_auto;
+                tailf:info "Turns on the device discovery protocol";
+                value 1;
+              }
+              enum "never" {
+                tailf:code-name power_never;
+                tailf:info "Turns off the device discovery protocol";
+                value 2;
+              }
+            }
+            default "auto";
+          }
+          leaf limit {
+            tailf:info "The port limit of the interface from the point of view of inline power management";
+            tailf:cli-full-command;
+            type uint16 {
+              range "0..60000";
+              tailf:info "<0-60000>;; Specify the port limit in milliwatt";
+            }
+          }
+          container four-pair {
+            tailf:info "four pair";
+            //tailf:cli-full-command;
+            leaf forced {
+              tailf:info "force the spare pair to supply power, this allows the usage of 60 Watts PoE";
+              tailf:cli-full-command;
+              type empty;
+            }
+          }
+          leaf priority {
+            tailf:info "The priority of the interface from the point of view of inline power management";
+            tailf:cli-full-command;
+            type enumeration {
+              enum "critical" {
+                tailf:info "The operation of the powered device is critical";
+                value 1;
+              }
+              enum "high" {
+                tailf:info "The operation of the powered device is in high priority";
+                value 2;
+              }
+              enum "low" {
+                tailf:info "The operation of the powered is in low priority";
+                value 3;
+              }
+            }
+            default "low";
+          }
+          leaf powered-device {
+            tailf:info "powered device";
+            tailf:cli-full-command;
+            type string {
+              length "1..24";
+              tailf:info "WORD<1-24>;; Description of powered device with up to 24 characters";
+            }
+          }
+        }
+      }
+//      uses inline-status;
+//      uses intf-status;
+//      uses intf-counters;
+//      uses intf-rmon;
+//      container vlan-id {
+//          tailf:info "Process VLAN-encapsulated packets with a specific VLAN ID";
+//          leaf dot1q {
+//              type uint16;
+//          }
+//      }
+    }
+  }
+  grouping port-channel {
+    list port-channel {
+//      tailf:hidden full;
+      max-elements 4;
+      tailf:cli-custom-range-enumerator "vlan-enum" {
+          tailf:cli-completion-id pch;
+      }
+      tailf:cli-allow-join-with-key {
+        tailf:cli-display-joined;
+      }
+      tailf:cli-mode-name "config-switch-if";
+      tailf:info "IEEE 802.3 Link Aggregation interface";
+      key "name";
+      leaf name {
+        //tailf:cli-suppress-range;
+        tailf:cli-allow-range;
+        mandatory true;
+        type port-channel-type;
+      }
+      uses giga-pch;
+    }
+  }
+
+  grouping interface-cmd {
+    container interface {
+      tailf:info "Select an interface to configure";
+      uses gigabitEthernet;
+      uses vlan;
+      uses port-channel;
+      container status {
+        config false;
+        tailf:info "Show Interface Status";
+        list gigabitEthernet {
+          tailf:info "GigabitEthernet interface";
+          tailf:callpoint cp-intf-status;
+          key Port;
+          uses intf-status-info;
+        }
+        list port-channel {
+          config false;
+          tailf:info "Show port channel interface status";
+          tailf:callpoint cp-pch-intf-status;
+          key Port;
+          uses intf-pch-status-info;
+        }
+      }
+      container configuration {
+        config false;
+        tailf:info "Show Interface Configuration";
+        list gigabitEthernet {
+          tailf:info "Show gigabitEthernet interface configuration";
+          tailf:callpoint cp-intf-config;
+          key Port;
+          uses intf-config-info;
+        }
+        list port-channel {
+          config false;
+          tailf:info "Show port channel interface configuration";
+          tailf:callpoint cp-pch-intf-config;
+          key Port;
+          uses intf-pch-config-info;
+        }
+      }
+      container protected {
+        config false;
+        tailf:info "Show Interface protected ports status list";
+        list gigabitEthernet {
+          tailf:info "GigabitEthernet interface";
+          tailf:callpoint cp-intf-protected-ports-status;
+          key Port;
+          uses protected-ports-info;
+        }
+      }      
+      container inline-status {
+        config false;
+        tailf:info "Show Interface power inline status";
+        list gigabitEthernet {
+          tailf:info "GigabitEthernet interface";
+          tailf:callpoint cp-intf-inline-status;
+          key Port;
+          uses inline-status-info;
+        }
+      }
+      container counters {
+        tailf:info "Show Interface counters";
+        list gigabitEthernet {
+          config false;
+          tailf:info "Show Interface counters";
+          tailf:callpoint cp-intf-counters;
+          key Port;
+          uses intf-counters-info;
+        }
+        list port-channel {
+          config false;
+          tailf:info "Show port channel interface counters";
+          tailf:callpoint cp-pch-counters;
+          key Port;
+          uses intf-counters-info;
+        }
+      }
+      container rmon {
+        tailf:info "Show Interface RMON statistics";
+        list gigabitEthernet {
+          config false;
+          tailf:info "Show Interface RMON statistics";
+          tailf:callpoint cp-intf-rmon;
+          key Port;
+          uses intf-rmon-info;
+        }
+        list port-channel {
+          config false;
+          tailf:info "Show port channel RMON statistics";
+          tailf:callpoint cp-pch-rmon;
+          key Port;
+          uses intf-rmon-info;
+        }
+      }
+      container switchPort {
+        tailf:info "Show Interface switchport information";
+        list gigabitEthernet {
+          config false;
+          tailf:info "Show Interface switchport information";
+          tailf:callpoint cp-intf-switchport;
+          key Port;
+          uses intf-switchport-info;
+        }
+        list port-channel {
+          config false;
+          tailf:info "Show port channel switchport information";
+          tailf:callpoint cp-pch-switchport;
+          key Port;
+          uses intf-switchport-info;
+        }
+      }
+    }
+  }
+}
+

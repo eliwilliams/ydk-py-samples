@@ -1,0 +1,223 @@
+module security {
+  namespace "http://www.cisco.com/ns/test/security";
+  prefix security;
+        
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  import tailf-common {
+      prefix tailf;
+  }
+
+  organization "Cisco Systems, Inc.";
+
+  description "Authentication and Authorization module for NFVIS";
+
+  contact "nfvis-yang-models@cisco.com";
+
+  revision 2017-05-25 {
+    description
+      "Released as part of 3.6.1.
+
+       Added typedef authentication_type
+       Modified max-elements to 4 for Tacacs
+       Modified description for Tacacs
+       Removed tailf: hidden full for Radius
+       Modified max-elements to 4 for Radius
+       Added tailf:hidden full for port and options in Radius
+       Removed tailf: hidden full from leaf authentication
+       Added type authentication_type for leaf authentication
+       Removed type enumeration for leaf authentication";
+  }
+
+  revision 2015-04-30 {
+      description "Initial release";
+  }
+
+  typedef server_name {
+    type union {
+         type inet:domain-name;
+         type inet:ip-address;
+         type string {
+              length 1..80;
+              pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+                          +  '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+                          + '(%[\p{N}\p{L}]+)?';
+             pattern "[_a-zA-Z0-9-.]*";
+         }
+    }
+    description
+       "The Security server's host name is either an IP address or a DNS domain name.";
+    tailf:info
+       "The Security server's host name is either an IPv4/v6 address or a DNS domain name.";
+  }
+  typedef key_type {
+      type enumeration {
+        enum 0 {
+           tailf:info "Specified in cleartext";
+        }
+      }
+  }
+
+  typedef authentication_type {
+      type enumeration {
+        enum tacacs {
+         tailf:info "Use TACACS+ for AAA";
+        }
+        enum radius {
+         tailf:info "Use RADIUS for AAA";
+        }
+      }
+  }
+
+  grouping secrets {
+    leaf key {
+      type key_type;
+      default 0;
+      description "Configures a preshared key to authenticate comms between Security client and server.";
+      tailf:info "Configures a preshared key to authenticate comms between Security client and server.";
+    }
+    leaf shared-secret {
+      type string {
+        length 1..63;
+        pattern "[_a-zA-Z0-9-.]*";
+      }
+      description "Preshared secret to authenticate comms between Security client and server.";
+      tailf:info "111Preshared secret to authenticate comms between Security client and server.";
+    }
+    leaf admin-priv {
+      tailf:info "Minimum privilege level for administrator";
+      tailf:cli-show-with-default;
+      type int8 {
+        range "1 .. 15";
+      }
+      default 15;
+      must ". > ../oper-priv" {
+         error-message "Administrator privilege must be higher than operator";
+      } 
+    }
+    leaf oper-priv{
+      tailf:info "Minimum privilege for operator";
+      tailf:cli-show-with-default;
+      type int8 {
+        range "1 .. 15";
+      }
+      default 11;
+      must ". < ../admin-priv" {
+         error-message "Operator privilege must be lower than administrator";
+      } 
+    }
+  }
+
+  // Approximates Nexus 1010 tacacs+ configuration, except for grouping secrets.
+  container security_servers {
+    tailf:cli-drop-node-name;
+    
+    container tacacs-server {
+    tailf:info "Tacacs+ server configuration";
+      list host {
+
+        key server;
+        max-elements 4;
+        ordered-by user;
+
+        leaf server {
+          type server_name;
+          description "IPv4/6 address or DNS domain name for the remo
+te Tacacs+ server";
+          must "(../secret/shared-secret)" {
+                tailf:dependency ../secret/shared-secret;
+                error-message "Must specify a shared-secret for every server";
+          }
+        }
+
+        container secret {
+          tailf:cli-drop-node-name;
+          tailf:info "Tacacs+ server credentials";
+          uses secrets;
+        }
+      }
+    }
+
+    container radius-server {
+      tailf:info "Radius server configuration";
+      list host {
+
+        tailf:info "Server configuration";
+        key server; 
+        max-elements 4;
+        ordered-by user;
+
+        leaf server {
+          tailf:info "Radius server IP address";
+          type server_name;
+          description "IPv4/v6 address or DNS name for the remote Radius server";
+          must "(../secret/shared-secret)" {
+                tailf:dependency ../secret/shared-secret;
+                error-message "Must specify a shared-secret for every server";
+          }
+        }
+
+        container secret {
+          tailf:info "Radius server credentials";
+          tailf:cli-drop-node-name;
+          uses secrets;
+        }
+
+        container port {
+          tailf:info "Radius server options";
+	  tailf:hidden full;
+          tailf:cli-drop-node-name;
+          leaf auth-port {
+            tailf:info "Radius authentication port (default 1812)";
+            type inet:port-number;
+            default 1812;
+          }
+
+          leaf acct-port {
+            tailf:info "Radius accounting port (default 1813)";
+            type inet:port-number;
+            default 1813;
+          }
+        }
+      }
+
+      container options {
+        tailf:info "Radius server options";
+	tailf:hidden full;
+        tailf:cli-drop-node-name;
+        leaf retransmit {
+          tailf:info "Radius server retry count (default 1)";
+          tailf:cli-show-with-default;
+          default 1;
+          type int32 {
+            range "1 .. 5";
+          }
+        }
+
+        leaf timeout {
+          tailf:info "Radius server timeout in seconds (default 3)";
+          tailf:cli-show-with-default;
+          default 3;
+          type int32 {
+            range "1 .. 10";
+          }
+        }
+      }
+    }
+
+    container aaa {
+      tailf:info "AAA server configuration";
+
+      leaf authentication {
+        description "Configure external authentication method";
+        tailf:info "Configure external authentication method";
+        tailf:cli-show-with-default;
+	type authentication_type;
+        default tacacs;
+      }
+    }
+  }
+
+}

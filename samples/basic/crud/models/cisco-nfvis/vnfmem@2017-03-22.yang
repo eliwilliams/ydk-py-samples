@@ -1,0 +1,73 @@
+submodule vnfmem {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    yang-version 1;
+
+    import tailf-common {
+          prefix tailf;
+    }
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    import utilization_common {
+        prefix "utilization_common";
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "VNF memory module";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemvnfmemory{
+        container memory {
+            config false;
+
+            container stats {
+                tailf:callpoint vnfmem;
+                config false;
+
+                list mem-usage {
+                    config false;
+
+                    uses utilization_common:request_time_info;
+                    key "duration";
+                    list vnf {
+                        uses utilization_common:collect_time_info;
+                        leaf name {
+                            description "Name of the vnf";
+                            type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                        }
+                        leaf total-MB {
+                            type string;
+                            description
+                                "an array of total memory usage";
+                            tailf:info "Array of Total memory used in MB";
+                            units "MBytes";
+                        }
+                        leaf rss-MB {
+                            type string;
+                            description
+                                "an array of rss memory usage";
+                            tailf:info "Array of Resident Set Size in MB";
+                            units "MBytes";
+                        }
+
+                        key "name";
+                    }
+               }
+            }
+        }
+    }
+}

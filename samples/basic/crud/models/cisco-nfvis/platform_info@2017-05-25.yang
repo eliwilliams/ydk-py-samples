@@ -1,0 +1,244 @@
+module platform_info {
+
+    yang-version 1;
+
+    namespace "http://www.cisco.com/nfvos/platform-info";
+    prefix platform_info;
+    import tailf-common {
+          prefix tailf;
+    }
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains a collection of YANG definitions for platform information";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-25 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Added hardware-version
+             Removed callpoint from container platform-detail
+             Added callpoint for software_packages, port_detail and switch_detail
+             Added tailf:cdb-oper for all leafs under platform-detail container";
+    }
+
+    revision 2015-08-21 {
+        description "Proposed";
+    }
+
+    container platform-detail {
+        config false;
+	tailf:info "Show the hardware info of the box";
+        container hardware_info {
+            config false;
+            description "List of all hardware information";
+
+	    leaf Manufacturer {
+		type string;
+		tailf:cdb-oper;
+                description "Product Manufacturer";
+                default "Cisco Systems Inc";
+            }
+			
+            leaf PID {
+                type string;
+                tailf:cdb-oper;
+                description "Product Identifier";
+                default "CSX-xxx-yyy";
+            }
+
+            leaf SN {
+                type string;
+                tailf:cdb-oper;
+                description "Serial Number";
+                default "12345678";
+            }
+
+            leaf hardware-version {
+                type string;
+                tailf:cdb-oper;
+                description "Hardware Version";
+            }
+
+	    leaf UUID {
+                type string;
+                tailf:cdb-oper;
+                description "UUID";
+                default "12345678";
+            }
+            
+            leaf Version {
+                type string;
+                tailf:cdb-oper;
+                description "Host OS version";
+                default "NFVOS_1.1";
+            }
+
+            leaf Compile_Time{
+                type string;
+                tailf:cdb-oper;
+                description "Host OS compile time";
+                default "N/A";
+            }
+
+            leaf CPU_Information {
+                type string;
+                tailf:cdb-oper;
+                description "CPU type, family and nubmer of core";
+                default "Cisco NFVOS cpu";
+            }
+
+            leaf Memory_Information {
+                type string;
+                tailf:cdb-oper;
+                description "Memory installed on the host";
+                default "N/A";
+            }
+
+            leaf Disk_Size {
+              	type string;
+              	tailf:cdb-oper;
+                description "Disk size";
+                default "Disk Size";
+            }
+
+            leaf CIMC_IP {
+                type string;
+                tailf:cdb-oper;
+                description "CIMC IP address of the chassis.";
+                default "127.0.0.1";
+            }
+        }
+
+        container software_packages {
+            config false;
+            tailf:callpoint platform-detail;
+            description "List of all software packages";
+            
+            leaf Kernel_Version {
+                type string;
+                description "Kernel version";
+                default "Kernel 1.1";
+            }
+            
+            leaf QEMU_Version {
+                type string;
+                description "QEMU version";
+                default "QEMU 1.1";
+            }
+
+            leaf LibVirt_Version {
+                type string;
+                description "libVirt version";
+                default "libVirt 1.1";
+            }
+
+            leaf OVS_Version {
+                type string;
+                description "OVS version";
+                default "OVS 1.1";
+            }
+        }
+
+        list port_detail {
+            key Name;
+            max-elements 1024;
+            tailf:callpoint platform-detail;
+            description
+                "A list of all ports with details for each port";
+
+                leaf Name {
+                    type string;
+                    description
+                         "Name of the port.";
+                }
+
+                leaf Type {
+                    type string;
+                    description
+                        "Type of port.";
+                    default "Port type";
+                }
+
+		leaf Media {
+		    type string;
+		    description
+		        "Physical media of the port.";
+		    default "NA";
+		}
+
+                leaf Link {
+                    type string;
+                    description
+                        "The type of link on the port.";
+                    default "Link type";
+                }
+
+                leaf Speed {
+                    type uint32 {
+                      range "1..4294967295";
+                    }
+                    description
+                        "Speed of the port.";
+                    default "10000000";
+                }
+
+                leaf MTU {
+                    type uint64;
+                    units "bytes";
+                    description "Max MTU supported";
+                    default 1500;
+                }
+
+                leaf MAC {
+                    type string;
+                    description "The MAC address of the port";
+                    default "aaa.bbb.ccc.eee";
+                }
+
+                leaf PCI_detail {
+                    type string;
+                    description "PCI detail information";
+                    default "PCI detail";
+                }
+        }
+
+        container switch_detail {
+            config false;
+            tailf:callpoint platform-detail;
+            description
+                "A list of all switch available with their config ex. ovs, h/w and etc.";
+
+                leaf UUID {
+                    type string;
+                    description "UUID of the switch";
+                    default "123456789";
+                }
+
+                leaf Type {
+                    type string;
+                    description
+                        "Type of switch.";
+                    default "Switch type";
+                }
+
+                leaf Name {
+                    type string;
+                    description
+                        "The name of the switch";
+                    default "Switch name";
+                }
+
+                leaf Ports {
+                    type uint8;
+                    description
+                        "The number of ports.";
+                    default 8;
+                }
+
+        }
+
+    }
+}

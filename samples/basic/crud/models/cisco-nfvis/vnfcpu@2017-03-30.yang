@@ -1,0 +1,86 @@
+submodule vnfcpu {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    yang-version 1;
+
+    import tailf-common {
+          prefix tailf;
+    }
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    import utilization_common {
+        prefix "utilization_common";
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "VNF CPU module";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-30 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemvnfcpu{
+        container vcpu {
+            config false;
+
+            container stats {
+                tailf:callpoint vnfcpu;
+                config false;
+                list vcpu-usage {
+                    config false;
+                    uses utilization_common:request_time_info;
+                    key "duration";
+
+                    list vnf {
+                        uses utilization_common:collect_time_info;
+                        leaf name {
+                            description "Name of the vnf";
+                            type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                        }
+
+                        leaf total-percentage {
+                            tailf:info "Array of Total VCPU usage in %";
+                            type string;
+                            description
+                                "an array of total vcpu usage";
+                            units "in percentage";
+                        }
+
+                        list vcpu {
+                            description
+                                "VCPU utilization for a given VNF";
+
+                            leaf id {
+                                tailf:info "Logical CPU ID";
+                                type uint8;
+                                description
+                                    "Logical CPU ID";
+                            }
+                            leaf vcpu-percentage {
+                                tailf:info "Array of VCPU usage in %";
+                                type string;
+                                description
+                                    "an array of vcpu utilization percent data.
+                                     e.g. [58.23, 57.34, ...]";
+                            }
+                        }
+
+                        key "name";
+                    }
+                }
+            }
+        }
+    }
+}
+

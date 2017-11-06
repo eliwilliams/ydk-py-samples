@@ -1,0 +1,137 @@
+submodule hostport {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    import tailf-common { prefix tailf; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import utilization_common {prefix "utilization_common"; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Host port details for NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemport{ 
+        container port {
+            config false;
+
+            container stats {
+                config false;
+                tailf:callpoint hostport_stats;
+
+                list port-usage {
+                    uses utilization_common:request_time_info;
+                    uses utilization_common:collect_time_info;
+
+                    key "duration";
+                    max-elements 1;
+
+                    list port {
+                        leaf name {
+                            type string;
+                            description "Name of the port";
+                        }
+                        leaf total-packets-per-sec {
+                            type string;
+                            description "an array of total packets/sec";
+                        }
+                        leaf rx-packets-per-sec {
+                            type string;
+                            description "an array of rx packets/sec";
+                        }
+                        leaf tx-packets-per-sec {
+                            type string;
+                            description "an array of tx packets/sec";
+                        }
+                        leaf total-errors-per-sec {
+                            type string;
+                            description "an array of total error packets/sec";
+                        }
+                        leaf rx-errors-per-sec {
+                            type string;
+                            description "an array of rx error packets/sec";
+                        }
+                        leaf tx-errors-per-sec {
+                            type string;
+                            description "an array of tx error packets/sec";
+                        }
+                    }
+                }
+            }
+
+            //container port-table
+
+            container table {
+                config false;
+                tailf:callpoint port_stat;
+
+                list port-usage {
+                    uses utilization_common:request_time_info;
+                    uses utilization_common:collect_time_info;
+                    key "duration name";
+                    max-elements 1024;
+                    description
+                        "A list of all port statistic detail for each port";
+
+                    leaf name {
+                        type string;
+                        description
+                             "Name of the port.";
+                    }
+
+                    leaf status {
+                         type string;
+                         description
+                          "Status of the port.";
+                         default "NA";
+                    }
+
+                    leaf ip-address {
+                        type string;
+                        description
+                            "IP address of the port.";
+                        default "NA";
+                    }
+
+                    leaf rx-packets {
+                        type string;
+                        description
+                            "rx packet count";
+                        default "rx-packets";
+                    }
+
+                    leaf tx-packets {
+                        type string;
+                        description
+                            "tx packet count";
+                        default "tx-packets";
+                    }
+
+                    leaf rx-packets-per-sec {
+                        type string;
+                        description "average rx packet rate pck/second";
+                        default "rx-packets-per-second";
+                    }
+
+                    leaf tx-packets-per-sec {
+                        type string;
+                        description "average tx packet rate pck/second";
+                        default "tx-packets-per-second";
+                    }
+                }
+            }
+        }
+    }
+}

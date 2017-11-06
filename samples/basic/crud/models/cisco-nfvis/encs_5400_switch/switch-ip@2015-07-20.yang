@@ -1,0 +1,545 @@
+submodule switch-ip {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The top level configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+  typedef interface-type {
+    type string {
+      pattern "1+/[0-7]+";
+      //pattern "[0-7]+";
+      //tailf:info "<1-1>/<0-7>;; Interface Id";
+    }
+  }
+
+  typedef ifs-range-type {
+    type string {
+        //pattern "[1-1]+/[0-7]+-[0-7]+";
+        pattern "1+/[0-7]+-[0-7]+";
+        //pattern "[0-7]+-[0-7]+";
+        //pattern "[0-7]+";
+    }
+  }
+
+// IPv6
+  grouping ipv6-default-gateway {
+    container default-gateway {
+      tailf:info "Specify default gateway";
+        choice gw {
+          case ipv6-addr-case {
+          leaf ipv6-ad {
+          tailf:cli-drop-node-name;
+          type inet:ipv6-address {
+            tailf:info "X:X:X:X::X;;  IPv6 address of default gateway";
+          }
+          }
+          }
+          case ipv6-pre-case {
+          leaf ipv6-pre {
+          tailf:cli-drop-node-name;
+          type inet:ipv6-prefix {
+            tailf:info "X:X:X:X::X/<0-128>;;  IPv6 address of default gateway";
+          }
+          }
+          }
+        }
+    }
+  }
+  grouping ip-acl-filter {
+      leaf any {
+        tailf:cli-full-command;
+        tailf:info "Any source host";
+        type empty;
+      }
+      leaf host {
+        tailf:cli-full-command;
+        tailf:info "A single host address";
+        type inet:ipv4-address {
+          tailf:info "A.B.C.D;;  Specify IP source address";
+        }
+      }
+      container host-and-mask {
+        tailf:cli-drop-node-name;
+        tailf:cli-sequence-commands;
+        tailf:cli-compact-syntax;
+        leaf host-addr {
+          tailf:cli-drop-node-name;
+          tailf:cli-incomplete-command;
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Specify IP source address";
+          }
+        }
+        leaf host-mask {
+          tailf:cli-drop-node-name;
+          tailf:cli-full-command;
+          type inet:ipv4-address {
+            tailf:info "M.M.M.M;;  Specify IP source address mask";
+          }
+        }
+      }
+  }
+
+  grouping ip-acl {
+    container access-list {
+      tailf:hidden full;
+      tailf:info "Named access-list";
+      container standard {
+        list ip-acl-list {
+          tailf:cli-drop-node-name;
+          tailf:cli-suppress-mode;
+          key name;
+          leaf name {
+            tailf:cli-drop-node-name;
+            type string {
+              length "1..32";
+              tailf:info "WORD;;  Access-list name. Length <1..32>";
+            }
+          }
+          container deny {
+            tailf:info "Specify packets to reject";
+            uses ip-acl-filter;
+          }
+          container permit {
+            tailf:info "Specify packets to forward";
+            uses ip-acl-filter;
+          }
+        }
+      }
+    }
+  }
+
+  grouping ip-default-gateway {
+    container default-gateway {
+      tailf:info "Specify default gateway";
+      leaf gateway {
+        tailf:cli-drop-node-name;
+        type inet:ipv4-address {
+          tailf:info "A.B.C.D;;  IP address of default gateway";
+        }
+      }
+    }
+  }
+
+  grouping mrouter-interface-grouping {
+    container interface {
+      tailf:info "IGMP snooping multicast routers interfaces";
+      leaf-list gigabitEthernet {
+        tailf:info "GigabitEthernet interface to configure";
+        tailf:cli-full-command;
+        tailf:cli-flat-list-syntax;
+        type ge-interface-type;
+      }
+// This approach does not work due to confdc compiler general internal error 
+// during compiler, there is no way we can debug it
+//      list gigabitEthernet {
+//        //tailf:cli-allow-join-with-key {
+//         // tailf:cli-display-joined;
+//        //}
+//        //tailf:cli-suppress-mode;
+//        tailf:info "GigabitEthernet interface to configure";
+//
+//        tailf:cli-custom-range-actionpoint "ifs-range" {
+//          tailf:cli-completion-id idd;
+//        }
+//        tailf:cli-custom-range-enumerator "ifs-enum" {
+//          tailf:cli-completion-id ide;
+//        }
+//
+//        key name;
+//        leaf name {
+//          //tailf:cli-drop-node-name;
+//          //tailf:cli-allow-range;
+//          type interface-type;
+//          tailf:cli-custom-range {
+//            tailf:cli-range-type "ifs-range-type";
+//          }
+//        }
+//      }
+      leaf-list port-channel {
+        //tailf:hidden full;
+        tailf:info "Port-Channel interface to configure";
+        tailf:cli-full-command;
+        type port-channel-type;
+        tailf:cli-range-list-syntax;
+      }
+    }
+  }
+  // Global / ip / igmp
+  grouping ip-igmp-grouping {
+    container igmp {
+      tailf:cli-incomplete-no;
+      tailf:info "IGMP interface commands";
+      container snooping {
+        tailf:cli-incomplete-no;
+        tailf:info "IGMP snooping commands";
+//        container map {
+//          tailf:info "map inner vlan to external vlan";
+//          container cpe {
+//            tailf:info "customer premises equipment";
+//            list vlan {
+//              tailf:info "Specify the CPE VLAN ID";
+//              tailf:cli-suppress-mode;
+//              key "vlan-list";
+//              leaf vlan-list {
+//                tailf:cli-drop-node-name;
+//                tailf:info "<1..4094>;;  CPE VLAN ID";
+//                type uint16 {
+//                 range "1..4094";
+//                }
+//              }
+//              container multicast-tv {
+//                tailf:info "Specify the Multicast VLAN";
+//                leaf vlan {
+//                  tailf:info "Multicas VLAN ID";
+//                  type uint16 {
+//                    range "1..4094";
+//                    tailf:info "<1..4094>;;  Multicas VLAN ID";
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
+        list vlan {
+          tailf:info "VLAN ID";
+          tailf:cli-suppress-mode;
+          tailf:cli-incomplete-no;
+          tailf:cli-incomplete-command;
+          tailf:cli-delete-when-empty;
+          key vlan-id;
+          leaf vlan-id {
+            tailf:cli-suppress-range;
+            tailf:cli-drop-node-name;
+            //tailf:cli-incomplete-no;
+            type vlan-type;
+          }
+          leaf enable {
+            tailf:info "Enable IGMP snooping on a specific vlan";
+            tailf:cli-full-command;
+            type empty;
+          }
+//TODO, need to implement multicast-tv container
+          container forbidden {
+            tailf:info "Set forbidden multicast router interfaces";
+            container mrouter {
+              tailf:info "IGMP snooping multicast routers commands";
+              uses mrouter-interface-grouping;
+            }
+          }
+          leaf immediate-leave {
+            tailf:cli-full-command;
+            tailf:info "Stop forwarding immediately after receiving leave message";
+            type empty;
+          }
+          container mrouter {
+            tailf:hidden full;
+            tailf:info "IGMP snooping multicast routers";
+            uses mrouter-interface-grouping;
+            container learn {
+              tailf:info "Learn multicast router ports";
+              container pim-dvmrp {
+                tailf:info "Learn multicast router port by PIM, DVMRP and IGMP messages";
+                //choice learn-choice {
+                //  leaf enable {
+                //    tailf:info "enable learning";
+                //    type empty;
+                //  }
+                  leaf disable {
+                    tailf:info "disable learning";
+                    type empty;
+                  }
+                //}
+              }
+            }
+          }
+          container querier {
+            tailf:info "IGMP Querier commands";
+            leaf address {
+              tailf:info "Define the source IP address that the IGMP Snooping";
+              tailf:cli-full-command;
+              type inet:ipv4-address {
+                tailf:info "A.B.C.D;;  Source IP address";
+              }
+            }
+            leaf enable {
+              tailf:info "Enalbe IGMP snooping querier on a specific VLAN";
+              tailf:cli-full-command;
+              type empty;
+            }
+            container election {
+              tailf:hidden full;
+              tailf:info "enable IGMP Snooping querier election";
+              //choice learn-choice {
+              //  leaf enable {
+              //    tailf:info "enable querier election";
+              //    type empty;
+              //  }
+                leaf disable {
+                  tailf:info "disable querier election";
+                  type empty;
+                }
+              //}
+            }
+            leaf version {
+              tailf:info "sets the IGMP version of an IGMP querier on a specific VLAN";
+              tailf:cli-full-command;
+              type enumeration {
+                enum "2" {
+                  tailf:info "Specify that the IGMP version would be IGMPv2";
+                  value 2;
+                }
+                enum "3" {
+                  tailf:info "Specify that the IGMP version would be IGMPv3";
+                  value 3;
+                }
+              }
+            }
+          }
+        }
+        container querier {
+          tailf:info "Enable IGMP Snooping Querier";
+            leaf enable {
+              tailf:cli-full-command;
+              type empty;
+            }
+        }
+        leaf enable {
+          tailf:cli-full-command;
+          tailf:info "Enable IGMP Snooping";
+          type empty;
+        }
+      }
+    }
+  }
+
+//  grouping ip-igmp-proxy-grouping {
+//    container igmp-proxy {
+//      tailf:info "IGMP proxy configurations";
+//      container downstream {
+//        tailf:info "Enable downstream protection";
+//        leaf protected {
+//          tailf:cli-full-command;
+//          type empty;
+//        }
+//      }
+//      container ssm {
+//        tailf:info "Define the SSM range of IP multicast addresses";
+//        choice ssm-choice {
+//          leaf default {
+//            tailf:info "The default SSM range";
+//            type empty;
+//          }
+//          leaf range {
+//            tailf:info "The standard IP access list name defining the SSM range";
+//            type string {
+//              tailf:info "WORD;; The standard IP access list name defining the SSM range";
+//              length "1..32";
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
+//
+//  grouping ip-multicast-routing-grouping {
+//    container multicast-routing {
+//      tailf:info "To enable IP multicast routing";
+//      leaf igmp-proxy {
+//        tailf:info "enable IGMP-PROXY protocol";
+//        type empty;
+//      }
+//    }
+//  }
+
+  grouping ip-route-grouping {
+    container route {
+      tailf:info "Establish static routes";
+      list ip-route-forwarding-list {
+        tailf:cli-drop-node-name;
+        tailf:cli-suppress-mode;
+        tailf:cli-delete-when-empty;
+        tailf:cli-compact-syntax;
+        tailf:cli-sequence-commands {
+          tailf:cli-reset-all-siblings;
+        }
+        key "prefix mask forwarding-address";
+        leaf "prefix" {
+          tailf:cli-suppress-range;
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Destination prefix";
+          }
+        }
+        leaf mask {
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Destination prefix mask";
+          }
+        }
+        leaf forwarding-address {
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Forwarding router's address";
+          }
+        }
+        leaf metric {
+          tailf:cli-drop-node-name;
+          tailf:cli-break-sequence-commands;
+          type uint8 {
+            tailf:info "<1-255>;;Distance metric for this route";
+            range "1..255";
+          }
+        }
+      }
+    }
+  }
+
+  grouping ip-radius {
+    container radius {
+      tailf:info "RADIUS configuration commands";
+      container source-interface {
+      tailf:info "Specify interface for source address in RADIUS packets";
+        leaf vlan  {
+          tailf:info "vlan";
+          type vlan-type;
+        }
+      }
+    }
+  }
+
+  grouping ip-cmd {
+  container ip {
+    tailf:info "Global IP configuration commands";
+    uses ip-acl;
+    uses ip-default-gateway;
+    uses ip-igmp-grouping;
+//    uses ip-igmp-proxy-grouping;
+//    uses ip-multicast-routing-grouping;
+    uses ip-route-grouping;
+    uses ip-radius;
+    leaf routing {
+      tailf:info "Enable IP routing";
+      tailf:cli-full-command;
+      tailf:cli-show-no;
+     type empty;
+    }
+    list interface {
+      config false;
+      tailf:info "show switch ip interface";
+      tailf:callpoint cp-ip-intf-table;
+      key ip-address;
+      leaf ip-address {
+        type string;
+      }
+      leaf if-name {
+        type string;
+      }
+      leaf admin-status {
+        type string;
+      }
+      leaf oper-status {
+        type string;
+      }
+      leaf type {
+        type string;
+      }
+//      leaf directed-broadcast {
+//        type string;
+//      }
+//      leaf prec {
+//        type string;
+//      }
+//      leaf redirect {
+//        type string;
+//      }
+//      leaf status {
+//        type string;
+//      }
+    }
+  }
+
+  container ipv6 {
+//    uses ipv6-acl;
+    tailf:hidden full;
+    uses ipv6-default-gateway;
+  }
+
+  container  arp {
+    tailf:info "Global ARP table configuration commands";
+    tailf:cli-incomplete-no;
+    leaf timeout {
+      tailf:info "Set ARP cache timeout";
+      tailf:cli-full-command;
+      type uint32 {
+        range "1..40000000";
+        tailf:info "<1-40000000>;;  Seconds";
+      }
+    }
+    list arp-entry {
+      tailf:cli-suppress-mode;
+      tailf:cli-drop-node-name;
+      tailf:cli-incomplete-command;
+      tailf:cli-delete-when-empty;
+      key "ip-addr vlan";
+      leaf ip-addr {
+        tailf:cli-suppress-range;
+        type inet:ipv4-address {
+          tailf:info "H.H.H.H;;IP address of ARP entry";
+        }
+      }
+      leaf vlan {
+        tailf:info "VLAN interface";
+        tailf:cli-expose-key-name;
+        tailf:cli-suppress-range;
+        type vlan-type {
+          tailf:info "<1-2349>|<2450-4093>;;  VLAN interface of ARP entry";
+        }
+      }
+      leaf mac-addr {
+        tailf:cli-drop-node-name;
+        type yang:mac-address {
+          tailf:info "EE:EE:EE:EE:EE:EE;;  48 bit mac address";
+        }
+      }
+    }
+    container table {
+      config false;
+      tailf:callpoint cp-arp-table;
+      list entry {
+        key "ip-addr vlan";
+        max-elements 4096;
+        leaf ip-addr {
+          type inet:ipv4-address;
+        }
+        leaf vlan {
+          type string;
+        }
+        leaf interface {
+          type string;
+        }
+        leaf hw-address {
+          type string;
+        }
+        leaf status {
+          type string;
+        }
+      }
+    }
+  }
+  }
+}

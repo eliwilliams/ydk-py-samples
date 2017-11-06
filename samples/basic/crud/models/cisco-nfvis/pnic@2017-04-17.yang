@@ -1,0 +1,630 @@
+module pnic {
+  namespace "http://www.cisco.com/nfvis/pnic";
+  prefix pnic;
+
+  import tailf-common {
+      prefix tailf;
+  }
+
+  organization "Cisco Systems, Inc.";
+
+  description "PNIC module for NFVIS";
+
+  contact "nfvis-yang-models@cisco.com";
+
+  revision 2017-04-17 {
+      description
+        "Released as part of NFVIS 3.6.1.
+
+         Initial release";
+  }
+  tailf:export none;
+  container pnics {
+    tailf:cli-drop-node-name;
+
+    leaf platform-family {
+      tailf:hidden debug;
+      type enumeration {
+        enum UCSC;
+        enum UCSE-M2;
+        enum UCSE-M3;
+        enum ENCS-5100;
+        enum ENCS-5400;
+        enum CSP-2100;
+      }
+      description "platform family";
+      tailf:info "platform family";
+      default UCSC;
+    }
+    list pnic {
+      key name;
+      tailf:info "Physical Network configuration";
+      tailf:cli-suppress-table;
+
+      tailf:cli-show-template-legend "Name          $(.selected~=link_state?$(Link|ljust:7))$(.selected~=adminstatus_link?$(Admin|ljust:7))$(.selected~=mtu?$(MTU|ljust:8))$(.selected~=mac_address?$(Mac|ljust:18))$(.selected~=pnic_flag?$(in_use|ljust:9))$(.selected~=passthrough?$(Passthrough|ljust:15))$(.selected~=speed?$(Speed|ljust:8))$(.selected~=stats/receive/bytes?$(Rx Bytes|ljust:13) )$(.selected~=stats/receive/packets?$(Packets|ljust:10) )$(.selected~=stats/receive/errors?$(Errors|ljust:8) )$(.selected~=stats/receive/dropped?$(Dropped|ljust:8) )$(.selected~=stats/receive/rate_mbps?$(Mbps|ljust:6) )$(.selected~=stats/receive/broadcast?$(Broadcast|ljust:10))$(.selected~=stats/receive/multicast?$(Multicast|ljust:10))$(.selected~=stats/transmit/bytes?$(TX Bytes|ljust:13) )$(.selected~=stats/transmit/packets?$(Packets|ljust:10) )$(.selected~=stats/transmit/errors?$(Errors|ljust:8) )$(.selected~=stats/transmit/dropped?$(Dropped|ljust:8) )$(.selected~=stats/transmit/collisions?$(Collisions|ljust:10) )$(.selected~=stats/transmit/rate_mbps?$(Mbps|ljust:6))$(.selected~=stats/transmit/broadcast?$(Broadcast|ljust:10))$(.selected~=stats/transmit/multicast?$(Multicast|ljust:10))
+==============$(.selected~=link_state?========)$(=======)$(.selected~=adminstatus_link?========)$(.selected~=mtu?========)$(.selected~=mac_address?========)$(.selected~=pnic_flag?=========)$(.selected~=passthrough?============)$(.selected~=speed?======)$(.selected~=stats/receive/bytes?==============)$(.selected~=stats/receive/packets?===========)$(.selected~=stats/receive/errors?=========)$(.selected~=stats/receive/dropped?=========)$(.selected~=stats/receive/rate_mbps?=======)$(.selected~=stats/receive/broadcast?=======)$(.selected~=stats/receive/multicast?=======)$(.selected~=stats/transmit/bytes?==============)$(.selected~=stats/transmit/packets?===========)$(.selected~=stats/transmit/errors?=========)$(.selected~=stats/transmit/dropped?=========)$(.selected~=stats/transmit/collisions?===========)$(.selected~=stats/transmit/rate_mbps?==========)$(.selected~=stats/transmit/broadcast?==========)$(.selected~=stats/transmit/multicast?==========)\n";
+
+      tailf:cli-show-template-enter "";
+      tailf:cli-show-template "$(name|ljust:13) $(.selected~=link_state?$(link_state|ljust:7))$(.selected~=adminstatus_link?$(adminstatus|ljust:7))$(.selected~=mtu?$(mtu|ljust:8))$(.selected~=mac_address?$(mac_address|ljust:18))$(.selected~=pnic_flag?$(pnic_flag|ljust:9))$(.selected~=passthrough?$(passthrough|ljust:15))$(.selected~=speed?$(speed|ljust:8))$(.selected~=stats/receive/bytes?$(stats/receive/bytes|ljust:13) )$(.selected~=stats/receive/packets?$(stats/receive/packets|ljust:10) )$(.selected~=stats/receive/errors?$(stats/receive/errors|ljust:8) )$(.selected~=stats/receive/dropped?$(stats/receive/dropped|ljust:8) )$(.selected~=stats/receive/rate_mbps?$(stats/receive/rate_mbps|ljust:6) )$(.selected~=stats/receive/broadcast?$(stats/receive/broadcast|ljust:10))$(.selected~=stats/receive/multicast?$(stats/receive/multicast|ljust:10))$(.selected~=stats/transmit/bytes?$(stats/transmit/bytes|ljust:13) )$(.selected~=stats/transmit/packets?$(stats/transmit/packets|ljust:10) )$(.selected~=stats/transmit/errors?$(stats/transmit/errors|ljust:8) )$(.selected~=stats/transmit/dropped?$(stats/transmit/dropped|ljust:8) )$(.selected~=stats/transmit/collisions?$(stats/transmit/collisions/|ljust:10) )$(.selected~=stats/transmit/rate_mbps?$(stats/transmit/rate_mbps|ljust:6))$(.selected~=stats/transmit/broadcast?$(stats/transmit/broadcast|ljust:10))$(.selected~=stats/transmit/multicast?$(stats/transmit/multicast|ljust:10))
+" { tailf:cli-auto-legend; }
+      leaf name {
+        type string {
+            length 1..12;
+            pattern "[A-Za-z0-9_\-]+";
+        }
+        description "pnic name";
+        tailf:info "pnic name";
+      }
+      leaf type {
+        type enumeration {
+          enum ethernet;
+          enum port_channel;
+        }
+        description "pnic type";
+        tailf:info "pnic type";
+        default ethernet;
+      }
+      //tailf:callpoint change_pnic;//tailf:transaction-hook subtree; CSP Only for now
+      leaf speed {
+        config false;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type enumeration {
+          enum 10G;
+          enum 1G;
+          enum 10G_SR;
+          enum 10G_PF;
+          enum 10G_VF;
+        }
+        description "interface speed";
+        tailf:info "interface speed";
+        default 1G;
+      }
+      leaf operational-speed {
+        type uint32;
+        config false;
+        tailf:cdb-oper;
+        description "interface operational speed";
+        tailf:info "interface operational speed";
+      }
+      leaf bond {
+        tailf:hidden debug;
+        type string {
+            length 1..80;
+            pattern "[A-Za-z0-9_\-]+";
+        }
+        description "bonding for pnic";
+        tailf:info "bonding for pnic";
+      }
+      leaf bond_mode { //CSP Only, show Product ID
+        // when "../../platform-family = 'CSP-2100'";
+        type enumeration {
+          enum balance-slb;
+          enum active-backup;
+          enum balance-tcp;
+        }
+        must "((../type = 'ethernet') and (../bond_mode = 'balance-slb')) or (../type = 'port_channel')" {
+            tailf:dependency "../type";
+            error-message "bond_mode not valid for eth interface";
+        }
+        tailf:info "bond mode: balance_slb, active_backup, balance_tcp";
+        description "bond mode: balance_slb, active_backup, balance_tcp";
+        default balance-slb;
+      }
+      leaf trunks {
+        type string {
+            length 1..80;
+            pattern "[0-9\-,]+";
+        }
+        must "(../type = 'port_channel')" {
+            tailf:dependency ../type ;
+            error-message "trunks not valid for eth interface";
+        }
+        description "define vlan trunks. e.g. 100,105-109";
+        tailf:info "define vlan trunks. e.g. 100,105-109";
+      }
+      leaf lacp_type { // CSP Only, show Product ID
+        // when "../../platform-family = 'CSP-2100'";
+        type enumeration {
+          enum active;
+          enum passive;
+	        enum off;
+        }
+        must "((../type = 'ethernet') and (../lacp_type = 'off')) or (../type = 'port_channel')" {
+            tailf:dependency ../type ;
+            error-message "lacp_type not valid for eth interface";
+        }
+        description "LACP type (active, passive, off)";
+        tailf:info "LACP type (active, passive, off)";
+        default off;
+      }
+      leaf member_of {
+        // when "../../platform-family = 'CSP-2100'";
+        type leafref {
+            path "/pnics/pnic/name";
+        }
+        must "../passthrough = 'none'" {
+            tailf:dependency "../passthrough";
+            error-message "member_of not allowed with passthrough";
+        }
+        must "../type = 'ethernet'" {
+            tailf:dependency "../type";
+            error-message "member_of not valid for port_channel";
+        }
+        must "../pnic_flag = \"not_used\"" {
+            tailf:dependency "../pnic_flag";
+            error-message "pnic already in use cannot be a member of port-channel";
+        }
+        description "pnic name this pnic is a member of";
+        tailf:info "pnic name this pnic is a member of";
+      }
+      leaf passthrough { // CSP Only, show Product ID
+        // when "../../platform-family = 'CSP-2100'";
+        config false;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type enumeration {
+          enum none; // NFVIS Should just default to none
+          enum macvtap;
+          enum pcie;
+          enum sriov;
+        }
+        description "passthrough mode";
+        tailf:info "passthrough mode";
+        must "((../type = 'ethernet') and (. != 'none')) or "
+            + ". = 'none'" {
+            tailf:dependency "../type";
+            error-message "passthrough not allowed for port channel";
+        }
+        must "((not (../member_of)) and (. != 'none')) or "
+            + ". = 'none'" {
+            tailf:dependency "../member_of";
+            error-message "passthrough not allowed with member_of";
+        }
+        must "((../sriov_intf != 'none') and (. != 'pcie')) or "
+            + "(../sriov_intf = 'none')" {
+            tailf:dependency "../sriov_intf";
+            error-message "SRIOV interfaces can not be PCIe passthrough";
+        }
+        must "((. != 'none') and (../pnic_flag = 'not_used')) or "
+            + "(. = 'none')" {
+            tailf:dependency "../pnic_flag";
+            error-message "Cannot change passthrough mode, PNIC already in use";
+        }
+        default none;
+      }
+      leaf pnic_flag {
+        config false;
+        tailf:hidden debug; // Internal Use
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type string {
+          length 1..15;
+        }
+        must "../type = 'ethernet'" {
+            tailf:dependency "../type";
+            error-message "the pnic NOT valid for port channel";
+        }
+        description "flag for whether the pnic in use or not";
+        tailf:info "flag for whether the pnic in use or not";
+        default "not_used";
+      }
+      leaf service_owner {
+        config false;
+        tailf:hidden debug;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type string;
+        must "../type = 'ethernet'" {
+            tailf:dependency "../type";
+            error-message "the pnic NOT valid for port channel";
+        }
+        description "Service exclusive owner of this pnic";
+        tailf:info "Service exclusive owner of this pnic";
+        default "no-owner";
+      }
+      leaf sriov_intf {
+        config false;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        //tailf:display-when ". != 'none'";
+        type string {
+          length 1..15;
+        }
+        must "((../type = 'port_channel') and (. = 'none')) or (../type = 'ethernet')" {
+            tailf:dependency "../type";
+            error-message "port channel not a valid sriov interface";
+        }
+        description "sriov VF/PF interface";
+        tailf:info "sriov VF/PF interface";
+        default "none";
+      }
+      leaf sriov_numvfs { // NFVOS should calculate the number of SRIOVs at startup, tag
+        tailf:hidden debug;
+        type int32;
+        description "SR-IOV Number of VFs currently configured on this pnic";
+        tailf:info "SR-IOV Number of VFs currently configured on this pnic";
+        default 0;
+      }
+      leaf sriov_totalvfs {
+        tailf:hidden debug;
+        type int32;
+        description "SR-IOV Maximum VFs that can be configured on this pnic";
+        tailf:info "SR-IOV Maximum VFs that can be configured on this pnic";
+        default 0;
+      }
+      leaf sriov_inusevfs {
+        tailf:hidden debug;
+        type int32;
+        description "SR-IOV Number of configured VFs currently in use on this pnic";
+        tailf:info "SR-IOV Number of configured VFs currently in use on this pnic";
+      	 default 0;
+      }
+      leaf sriov_switch_mode {
+        tailf:hidden debug;
+        type enumeration {
+          enum veb;
+          enum vepa;
+        }
+        description "SR-IOV Internal switch mode (VEB (switched) or VEPA (flow-through))";
+        tailf:info "SR-IOV Internal switch mode (VEB (switched) or VEPA (flow-through))";
+        default veb;
+      }
+      container sr-iov { // CSP Only
+        when "../../platform-family = 'CSP-2100'";
+        tailf:info "SR-IOV pnic configuration";
+        description "SR-IOV pnic configuration";
+        leaf numvfs {
+          type int32;
+          description "SR-IOV Number of VFs currently configured on this pnic";
+          tailf:info "SR-IOV Number of VFs currently configured on this pnic";
+          default 0;
+          must "(../../pnic_flag = 'not_used')" {
+            tailf:dependency "../../pnic_flag";
+            error-message "PNIC is in use, cannot perform sriov configuration.";
+          }
+        }
+        leaf totalvfs {
+          type int32;
+          description "SR-IOV Maximum VFs that can be configured on this pnic";
+          tailf:info "SR-IOV Maximum VFs that can be configured on this pnic";
+          default 0;
+        }
+        leaf inusevfs {
+          config false;
+	    tailf:cdb-oper {
+            tailf:persistent true;
+          }
+          type int32;
+          description "SR-IOV Number of configured VFs currently in use on this pnic";
+          tailf:info "SR-IOV Number of configured VFs currently in use on this pnic";
+          default 0;
+        }
+        leaf switchmode {
+          type enumeration {
+            enum veb;
+            enum vepa;
+          }
+          description "SR-IOV Internal switch mode (VEB (switched) or VEPA (flow-through))";
+          tailf:info "SR-IOV Internal switch mode (VEB (switched) or VEPA (flow-through))";
+          default veb;
+        }
+      }
+      leaf pch_state {
+        config false;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type string {
+          length 1..210;
+        }
+        must "((../type = 'ethernet') and (../pch_state = \"not_created\")) or (../type = 'port_channel')" {
+            tailf:dependency "../type";
+            error-message "pch_state not valid for eth interface";
+        }
+        description "port channel state... created or not";
+        tailf:info "port channel state... created or not";
+	      default "not_created";
+      }
+      leaf link_state {
+        config false;
+        tailf:cdb-oper {
+            tailf:persistent true;
+        }
+        type string {
+          length 1..15;
+        }
+        must "((../type = 'port_channel') and (. = \"down\")) or (../type = 'ethernet')" {
+            tailf:dependency "../type";
+            error-message "link_state not valid for port channel";
+        }
+        description "link state... up or down";
+        tailf:info "link state... up or down";
+	      default "-";
+      }
+      leaf lldp {// CSP Only
+        when "../../platform-family = 'CSP-2100'";
+        type enumeration {
+          enum enabled;
+          enum disabled;
+	      }
+        description "lldp is enabled or not for this interface";
+        tailf:info "lldp is enabled or not for this interface";
+        default enabled;
+      }
+      leaf promiscuous {// CSP Only
+        when "../../platform-family = 'CSP-2100'";
+        type enumeration {
+          enum enabled;
+          enum disabled;
+        }
+        must "((../promiscuous = 'enabled') and (../passthrough != 'none')) or (../promiscuous = 'disabled')" {
+            tailf:dependency "../passthrough";
+            error-message "promiscuous enabled only for passthrough modes";
+        }
+        description "promiscuous mode is enabled or not for this interface";
+        tailf:info "promiscuous mode is enabled or not for this interface";
+        default disabled;
+      }
+      leaf mac_address {
+        type string {
+          pattern '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}';
+        }
+        config false;
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+        must "(../type = 'ethernet')" {
+          tailf:dependency "../type";
+          error-message "MAC address only for Physical NIC not for port-channel";
+        }
+        description "BIA for Physical NICs";
+        tailf:info "BIA for Physical NICs";
+      }
+      leaf mtu {
+        config false;
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+        type int32;
+        default 9000;
+        description "Maximum Transmission Unit for the physical interface";
+        tailf:info "Maximum Transmission Unit for the physical interface";
+      }
+      leaf adminstatus {
+        config false;// for now making this unconfigurable
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+        type enumeration {
+          enum up;
+          enum down;
+        }
+        must "(../passthrough != 'pcie') and (../passthrough != 'sriov')" {
+            tailf:dependency "../passthrough";
+            error-message "not allow to shutdown PCIE or SRIOV interface";
+        }
+        default up;
+        description "Admin configured status for a physical interface";
+        tailf:info "Admin configured status for a physical interface";
+      }
+      leaf adminstatus_link {
+        tailf:alt-name adminstatus;
+        config false;
+        tailf:cdb-oper;
+        type empty;
+        description "Admin configured status for a physical interface";
+        tailf:info "Admin configured status for a physical interface";
+      }
+      leaf refcnt {// index
+        config false;
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+        type int32;
+        default 0;
+        description "Refernce count for the physical interface";
+        tailf:info "Reference count for the physical interface";
+      }
+      container stats {
+        config false;
+        tailf:cdb-oper;
+
+        container receive {
+          leaf bytes {
+            type uint64;
+            mandatory true;
+          }
+          leaf packets {
+            type uint64;
+            mandatory true;
+          }
+          leaf errors {
+            type uint32;
+            mandatory true;
+          }
+          leaf dropped {
+            type uint32;
+            mandatory true;
+          }
+          leaf rate_mbps {
+            type decimal64 {
+                fraction-digits "3";
+            }
+            mandatory true;
+          }
+	  leaf broadcast {
+	    type uint64;
+	    mandatory true;
+	  }
+	  leaf multicast {
+	    type uint64;
+	    mandatory true;
+	 }
+        }
+        container transmit {
+          leaf bytes {
+            type uint64;
+            mandatory true;
+          }
+          leaf packets {
+            type uint64;
+            mandatory true;
+          }
+          leaf errors {
+            type uint32;
+            mandatory true;
+          }
+          leaf dropped {
+            type uint32;
+            mandatory true;
+          }
+          leaf collisions {
+            type uint32;
+            mandatory true;
+          }
+          leaf rate_mbps {
+            type decimal64 {
+                fraction-digits "3";
+            }
+            mandatory true;
+          }
+	  leaf broadcast {
+	    type uint64;
+	    mandatory true;
+	  }
+	  leaf multicast {
+	    type uint64;
+	    mandatory true;
+	  }
+        }
+      }
+      container vfnics {// CSP Only
+        when "../../platform-family = 'CSP-2100'";
+        config false;
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+        description "List of VFs on this pnic";
+        list vfnic {
+          key "vf_idx";
+          leaf vf_idx {
+            type int32;
+            description "VF index in pnic table";
+            tailf:info "VF index in pnic table";
+          }
+          leaf name {
+            type string {
+              length 1..15;
+              pattern "[A-Za-z0-9_\-]+";
+            }
+            description "vfnic";
+            tailf:info "vfnic name";
+          }
+          leaf inuse_flag {
+            type enumeration {
+              enum in-use;
+              enum not-used;
+	    }
+            description "flag for whether the vf in use or not";
+            tailf:info "flag for whether the vf in use or not";
+            default not-used;
+          }
+          leaf service_owner {
+            type string {
+                length 1..32;
+                pattern "[A-Za-z0-9_\-]+";
+            }
+            description "owner service name";
+            tailf:info "owner service name";
+	    default "none";
+          }
+        }
+      }
+    }
+  }
+  container lldp { //CSP Only
+    when "../pnics/platform-family = 'CSP-2100'";
+    config false;
+    tailf:info "Display LLDP information";
+    description "Display LLDP information";
+    list neighbors {
+      tailf:cli-enforce-table;
+      key name;
+      tailf:callpoint grab_lldp_neighbor;
+      leaf name {
+        type leafref {
+            path "/pnics/pnic/name";
+        }
+        description "pnic name";
+        tailf:info "pnic name";
+      }
+      leaf device_id {
+        type string {
+            length 1..80;
+        }
+      }
+      leaf holdtime {
+        type int16;
+      }
+      leaf caps {
+        type string {
+            length 1..10;
+        }
+      }
+      leaf platform {
+        type string {
+            length 1..13;
+        }
+      }
+      leaf portid {
+        type string {
+            length 1..17;
+        }
+      }
+      leaf description {
+        type string {
+            length 1..80;
+        }
+      }
+    }
+    list stats {
+      key name;
+      tailf:callpoint grab_lldp_stat;
+      tailf:cli-enforce-table;
+      leaf name {
+        type leafref {
+            path "/pnics/pnic/name";
+        }
+        description "pnic name";
+        tailf:info "pnic name";
+      }
+      leaf tx_frames {
+        type uint64;
+      }
+      leaf discard_rx {
+        type uint64;
+      }
+      leaf error_rx {
+        type uint64;
+      }
+      leaf rx_frames {
+        type uint64;
+      }
+      leaf discarded_tlvs {
+        type uint64;
+      }
+      leaf unrec_tlvs {
+        type uint64;
+      }
+      leaf ageouts {
+        type uint64;
+      }
+    }
+  }
+}

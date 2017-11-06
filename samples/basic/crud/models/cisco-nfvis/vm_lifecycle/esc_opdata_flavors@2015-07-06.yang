@@ -1,0 +1,46 @@
+submodule esc_opdata_flavors {
+
+  /*
+   * This represents operational data of the flavors
+   */
+
+  belongs-to vmlc { prefix esc; }
+
+  import ietf-yang-types { prefix "ietf-yang-types"; }
+  include esc_opdata_flavor_state_machine;
+
+  organization "Cisco Systems";
+
+  contact "Natasha Shrestha <nashrest@cisco.com>";
+
+  revision 2015-07-06 {
+    description
+      "Elastic Services Controller Module's flavors' operational data";
+  }
+
+  grouping esc_opdata_flavors {
+    description
+      "This contains all the operational data of the flavors";
+    container flavors {
+      list flavor {
+        description "Flavor running information";
+        key "name";
+        leaf name {
+          description "Name of the flavor";
+          type string;
+        }
+        leaf flavor_id {
+          description "ID of the flavor";
+          type ietf-yang-types:uuid;
+        }
+        leaf public {
+          description "True if the flavor is public";
+          type boolean;
+          default true;
+        }
+        /* State Machine for Flavor */
+        uses esc_opdata_flavor_state_machine;
+      }
+    }
+  }
+}

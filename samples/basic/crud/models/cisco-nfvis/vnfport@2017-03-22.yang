@@ -1,0 +1,81 @@
+submodule vnfport {
+
+    belongs-to system_monitoring {
+    prefix "system_monitoring";
+    }
+
+    import tailf-common { prefix tailf; }
+    import ietf-yang-types { prefix yang; }
+    import utilization_common {prefix "utilization_common"; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "VNF port module";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-22 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+             Initial revision";
+    }
+
+    grouping systemvnfport{
+        container port {
+            config false;
+
+            container stats {
+                config false;
+                tailf:callpoint vnfport_stats;
+
+                list port-usage {
+                    config false;
+                    uses utilization_common:request_time_info;
+                    key "duration";
+
+                    list vnf {
+                        uses utilization_common:collect_time_info;
+                        leaf name {
+                            description "Name of the vnf";
+                            type string { pattern "[a-zA-Z0-9.\-_]*"; }
+                        }
+
+                        key "name";
+
+                        list port {
+                            leaf port-name {
+                                type string;
+                                description "Name of the port";
+                            }
+                            leaf total-packets-per-sec {
+                                type string;
+                                description "an array of total packets/sec";
+                            }
+                            leaf rx-packets-per-sec {
+                                type string;
+                                description "an array of rx packets/sec";
+                            }
+                            leaf tx-packets-per-sec {
+                                type string;
+                                description "an array of tx packets/sec";
+                            }
+                            leaf total-errors-per-sec {
+                                type string;
+                                description "an array of total error packets/sec";
+                            }
+                            leaf rx-errors-per-sec {
+                                type string;
+                                description "an array of rx error packets/sec";
+                            }
+                            leaf tx-errors-per-sec {
+                                type string;
+                                description "an array of tx error packets/sec";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,62 @@
+module hostaction {
+
+    namespace "http://www.cisco.com/nfvos/hostaction";
+    prefix hostaction;
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains a collection of YANG definitions for
+         host actions";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-25 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Modified actionpoint to hostrebootaction_point";
+    }
+
+    revision 2015-11-24 {
+        description "Proposed";
+    }
+
+    container hostaction {
+        description "Host actions: REBOOT";
+
+        tailf:action reboot{
+            tailf:actionpoint hostrebootaction_point;
+            input {
+            }
+            output {
+            }
+        }
+
+        tailf:action shutdown{
+            tailf:actionpoint hostrebootaction_point;
+            input {
+            }
+            output {
+            }
+        }
+
+        tailf:action wan-dhcp-renew{
+            tailf:actionpoint hostaction_point;
+            input {
+            }
+            output {
+            }
+        }
+
+        tailf:action mgmt-dhcp-renew{
+            tailf:actionpoint hostaction_point;
+            input {
+            }
+            output {
+            }
+        }
+    }
+}

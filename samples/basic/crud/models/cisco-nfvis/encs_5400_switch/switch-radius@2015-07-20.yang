@@ -1,0 +1,237 @@
+submodule switch-radius {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The 'radius' component provides radius server support for configuring switch
+     device.";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+  grouping radius-server-cmd {
+  container radius-server {
+    tailf:info "Modify RADIUS parameters";
+    tailf:cli-delete-when-empty;
+    list host {
+      tailf:info "Specify a RADIUS server";
+      tailf:cli-suppress-mode;
+      tailf:cli-delete-when-empty;
+      key ip-host;
+      leaf ip-host {
+        tailf:cli-drop-node-name;
+        tailf:cli-suppress-range;
+        type union {
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Specify IP source address";
+          }
+          type string {
+            length "1..158";
+            pattern "[0-9a-zA-Z.]*";
+            tailf:info "WORD<1-158>;;  Specify Host Name";
+//TODO add IPV6 type
+          }
+        }
+      }
+      container attribute {
+          //tailf:cli-sequence-commands;
+          tailf:cli-compact-syntax;
+        tailf:cli-drop-node-name;
+        //tailf:cli-incomplete-no;
+        tailf:info "Specify the UDP port number for authentication
+                    requests. If set to 0,  the host is not used for
+                    authentication . If unspecified,  the port number
+                    defaults to 1812.";
+        tailf:cli-full-no;
+        leaf auth-port {
+          //tailf:cli-optional-in-sequence;
+          tailf:info " Specify the UDP port number for authentication
+                       requests. If set to 0,  the host is not used for
+                       authentication . If unspecified,  the port number
+                       defaults to 1812.";
+          type uint16 {
+          range "0..65535";
+          tailf:info "<0..65535>;;  Specify the UDP port number for authentication
+                       requests. If set to 0,  the host is not used for
+                       authentication . If unspecified,  the port number
+                       defaults to 1812.";
+          }
+          default 1812;
+        }
+        leaf acct-port {
+          //tailf:cli-optional-in-sequence;
+          tailf:info " Specify the UDP port number for accounting requests.
+                       If set to 0,  the host is not used for accounting . If
+                       unspecified,  the port number defaults to 1813.";
+          type uint16 {
+          range "0..65535";
+          tailf:info "<0..65535>;;  Specify the UDP port number for accounting requests.
+                       If set to 0,  the host is not used for accounting . If
+                       unspecified,  the port number defaults to 1813.";
+          }
+          default 1813;
+        }
+        leaf retransmit {
+          //tailf:cli-optional-in-sequence;
+          tailf:info "Specify the number of retries to active server
+                       (overrides default). If no retransmit value is
+                       specified, the global value is used.";
+          type uint8 {
+          range "1..15";
+          tailf:info "<1..15>;;  Specify the number of retries to active server
+                       (overrides default). If no retransmit value is
+                       specified, the global value is used.";
+          }
+        }
+        leaf deadtime {
+          //tailf:cli-optional-in-sequence;
+          tailf:info "Specify time, in minutes, for which a RADIUS server is
+                       skipped over by transaction requests.";
+          type uint16 {
+          range "0..2000";
+          tailf:info "<0..2000>;;  Specify time, in minutes, for which a RADIUS server is
+                       skipped over by transaction requests.";
+          }
+        }
+        leaf key {
+          //tailf:cli-optional-in-sequence;
+          tailf:info "Specify the authentication and encryption key
+                      (per-server encryption key) for all RADIUS
+                      communications between the device and the RADIUS
+                      server. This key must match the encryption used on the
+                      RADIUS daemon. If no key string value is specified,
+                      the global value is used.";
+          type string {
+          length "0..128";
+          tailf:info "WORD<0..128>;;  Specify the authentication and encryption key
+                       (per-server encryption key) for all RADIUS
+                       communications between the device and the RADIUS
+                       server. This key must match the encryption used on the
+                       RADIUS daemon. If no key string value is specified,
+                       the global value is used.";
+          }
+        }
+        leaf priority {
+          //tailf:cli-optional-in-sequence;
+          tailf:info "Specify this server's priority which determines the
+                      order in which the servers are used, where 0 is the
+                      highest priority.";
+          type uint16 {
+          range "0..65535";
+          tailf:info "<0..65535>;;  Specify this server's priority which determines the
+                       order in which the servers are used, where 0 is the
+                       highest priority.";
+          }
+        }
+      }
+    }
+    leaf deadtime {
+      tailf:info "Time to stop using a server that doesn't respond";
+      tailf:cli-full-command;
+      type uint16 {
+        range "0..2000";
+        tailf:info "<0-2000>;;  Time in minutes";
+      }
+      default 0;
+    }
+    leaf key {
+      tailf:info "Specify the encryption key shared with the RADIUS servers";
+      tailf:cli-full-command;
+      type string {
+        length "0..128";
+        tailf:info "WORD<0-128>;;  Specify the shared key text";
+      }
+    }
+    leaf retransmit {
+      tailf:info "Specify the number of retries to active server";
+      tailf:cli-full-command;
+      type uint8 {
+        range "1..15";
+        tailf:info "<1-15>;;  Number of retries for a transaction";
+      }
+      default 3;
+    }
+    leaf timeout {
+      tailf:info "Time to wait for a RADIUS server to reply";
+      tailf:cli-full-command;
+      type uint8 {
+        range "1..30";
+        tailf:info "<1-30>;;  Time to wait for a RADIUS server to reply";
+      }
+      default 3;
+    }
+    container configuration {
+      list host {
+        tailf:info "Show radius server configuration";
+        config false;
+        tailf:callpoint cp-radius-config;
+        key ipaddr;
+        leaf ipaddr  {
+          type inet:ipv4-address {
+            tailf:info "A.B.C.D;;  Destination prefix";
+          }
+        }
+        leaf auth-port {
+          type uint16;
+        }
+        leaf acct-port {
+          type uint16;
+        }
+        leaf timeout {
+          type uint8;
+        }
+        leaf retransmit {
+          type uint8;
+        }
+        leaf deadtime {
+          type uint8;
+        }
+        leaf priority {
+          type uint8;
+        }
+        leaf usage {
+          type string;
+        }
+        leaf key {
+          type string;
+        }
+      }
+      container global {
+        tailf:info "Show radius server global configuration";
+        config false;
+        tailf:callpoint cp-radius-global;
+        leaf key {
+          type string;
+        }
+        leaf timeout {
+          type uint8;
+        }
+        leaf deadtime {
+          type uint16;
+        }
+        leaf retransmit {
+          type uint8;
+        }
+        leaf source-ipv4-intf {
+          type string;
+        }
+      }
+    }
+  }
+  }
+}

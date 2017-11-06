@@ -1,0 +1,37 @@
+submodule switch-support {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "Commands used for debug and support ";
+
+  revision 2017-08-24{
+    description
+      "Initial revision.";
+  }
+
+  grouping thread-cmd {
+    container thread {
+      tailf:info "Show thread status";
+      config false;
+      tailf:callpoint cp-thread-status;
+      leaf status {
+        tailf:info "Show thread status";
+        type string;
+      }
+    }
+  }
+}

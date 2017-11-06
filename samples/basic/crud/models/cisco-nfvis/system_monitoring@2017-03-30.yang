@@ -1,0 +1,71 @@
+module system_monitoring {
+
+    namespace "http://www.cisco.com/nfvos/system-monitoring";
+    
+    prefix system_monitoring;
+
+    import tailf-common { prefix tailf; }
+
+    import ietf-yang-types { prefix yang; }
+
+    include "hostcpu" {
+        revision-date 2017-03-22;
+    }
+    include "hostmem" {
+        revision-date 2017-03-22;
+    }
+    include "hostdisk" {
+        revision-date 2017-03-22;
+    }
+    include "hostport" {
+        revision-date 2017-03-22;
+    }
+    include "vnfcpu" {
+        revision-date 2017-03-30;
+    }
+    include "vnfmem" {
+        revision-date 2017-03-22;
+    }
+    include "vnfport" {
+        revision-date 2017-03-22;
+    }
+    include "vnfdisk" {
+        revision-date 2017-03-22;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "This module contains a collection of YANG definitions for
+         system monitoring";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-30 {
+        description
+            "Released as part of 3.5.1.
+
+             Updated versions for all include modules";
+    }
+
+    revision 2016-07-14 {
+        description "Proposed";
+    }
+
+    container system-monitoring {
+        tailf:info "Display host and vnf stats";
+        container host {
+            uses systemcpu;
+            uses systemmemory;
+            uses systemport;
+            uses systemdisk;
+        }
+
+        container vnf {
+            uses systemvnfcpu;
+            uses systemvnfmemory;
+            uses systemvnfport;
+            uses systemvnfdisk;
+        }
+    }
+}

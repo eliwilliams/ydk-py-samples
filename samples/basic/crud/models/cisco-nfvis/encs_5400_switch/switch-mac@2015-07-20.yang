@@ -1,0 +1,207 @@
+submodule switch-mac {
+  belongs-to switch {
+    prefix s;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  include switch-types;
+
+  description
+    "The top level configuration";
+
+  revision 2015-07-20{
+    description
+      "Initial revision.";
+  }
+
+
+  grouping mac-address-info {
+    leaf Vlan {
+      type string;
+    }
+    leaf Mac-address {
+      type string;
+    }
+    leaf Port {
+      type string;
+    }
+    leaf Type {
+      type string;
+    }
+  }
+
+  grouping mac-stat {
+    leaf capacity {
+      type uint16;
+    }
+    leaf free {
+      type uint16;
+    }
+    leaf used {
+      type uint16;
+    }
+    leaf secure {
+      type uint16;
+    }
+    leaf dynamic {
+      type uint16;
+    }
+    leaf static {
+      type uint16;
+    }
+    leaf internal {
+      type uint16;
+    }
+  }
+
+  grouping mac-cmd {
+  container mac {
+    tailf:info "Global MAC configuration subcommands";
+    container access-list {
+      tailf:hidden full;
+      tailf:info "Named access-list";
+      list extended {
+        tailf:info "Extended Access List";
+        tailf:cli-mode-name "config-ext-macl";
+        tailf:cli-full-command;
+        tailf:cli-explicit-exit;
+
+        key id;
+        leaf id {
+          tailf:cli-suppress-range;
+          type string {
+            length "1..32";
+            tailf:info "WORD(1..32);;  access-list name";
+          }
+        }
+        list entry {
+          tailf:cli-drop-node-name;
+          tailf:cli-suppress-mode;
+          tailf:cli-delete-when-empty;
+          tailf:cli-compact-syntax;
+          tailf:cli-show-long-obu-diffs;
+          ordered-by user;
+          key rule;
+          leaf rule {
+            tailf:cli-drop-node-name;
+            tailf:cli-multi-word-key;
+            type string {
+              tailf:info "deny;;Specify packets to reject\n"+
+                "permit;;Specify packets to forwards";
+              pattern "(permit .*)|(deny .*)";
+            }
+          }
+        }
+      }
+    }
+    container address-table {
+      tailf:info "Configure the MAC address table";
+      leaf aging-time {
+        tailf:cli-full-command;
+        tailf:info "Set MAC address table entry maximum age";
+        type uint16 {
+          range "10..630";
+          tailf:info "<10-630>;; Aging time in seconds";
+        }
+        default 300;
+      }
+      container static {
+        tailf:cli-incomplete-no;
+        tailf:info "static keyword";
+        list mac-entries {
+          //tailf:cli-full-no;
+          tailf:cli-suppress-mode;
+          tailf:cli-drop-node-name;
+          tailf:cli-sequence-commands;
+          tailf:cli-compact-syntax;
+          tailf:cli-delete-when-empty;
+          tailf:cli-incomplete-no;
+          tailf:cli-incomplete-command;
+          key "mac-addr vlan";
+          leaf mac-addr {
+            tailf:cli-incomplete-no;
+            tailf:cli-suppress-range;
+            type yang:mac-address {
+              tailf:info "EE:EE:EE:EE:EE:EE;;  48 bit mac address";
+            }
+          }
+          leaf vlan {
+            //tailf:info "VLAN id";
+            tailf:cli-incomplete-command;
+            //tailf:cli-full-no;
+            tailf:cli-expose-key-name;
+            type vlan-type;
+          }
+          container interface {
+            tailf:cli-flatten-container;
+            tailf:info "Interface id";
+            choice intf-type {
+              leaf gigabitEthernet {
+                tailf:info "Giga ethernet interface to configure";
+                tailf:cli-incomplete-command;
+                tailf:cli-incomplete-no;
+                //tailf:cli-full-no;
+                tailf:cli-case-insensitive;
+                type ge-interface-type;
+              }
+              leaf port-channel {
+                //tailf:hidden full;
+                tailf:info "Ethernet Channel of interfaces";
+                tailf:cli-case-insensitive;
+                tailf:cli-incomplete-command;
+                tailf:cli-incomplete-no;
+                //tailf:cli-full-no;
+                type port-channel-type;
+              }
+            }
+          }
+          leaf type {
+            tailf:cli-drop-node-name;
+            tailf:cli-full-command;
+            tailf:cli-full-no;
+            type enumeration {
+//              enum "secure" {
+//                tailf:code-name type-secure;
+//                tailf:info "The address can be deleted only by the no bridge
+//                       address command or Unlock Port.";
+//                value 0;
+//              }
+              enum "permanent" {
+                tailf:code-name "permanent_mac";
+                tailf:info "The address would be deleted manually (default)";
+                value 1;
+              }
+              enum "delete-on-reset" {
+                tailf:code-name "delete_on_reset_mac";
+                tailf:info "The address would be deleted after reset";
+                value 2;
+              }
+              enum "delete-on-timeout" {
+                tailf:code-name "delete_on_timeout";
+                tailf:info "The address would be deleted after aged out";
+                value 3;
+              }
+            }
+          }
+        }
+      }
+    }
+    list addr-table {
+      config false;
+      tailf:info "Display Mac address table";
+      tailf:callpoint cp-vlan-mac-addr;
+      key "Vlan Mac-address";
+      uses mac-address-info;
+    }
+  }
+  }
+}

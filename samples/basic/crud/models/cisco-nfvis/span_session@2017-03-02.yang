@@ -1,0 +1,187 @@
+module span_session {
+    yang-version 1;
+    namespace "http://www.cisco.com/nfv/span_session";
+    prefix "span-session";
+
+    import network {
+       prefix network;
+    }
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "SPAN session management in NFVOS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-03-02 {
+        description "Initial revision";
+    }
+
+    grouping vm-vnic-id {
+        leaf vm-name {
+            tailf:info "VNFs VM name";
+            type string;
+        }
+        leaf vnic-id {
+            tailf:info "VMs nicid number";
+            type uint16 {
+                range "0..8";
+            }
+        }
+    }
+
+    typedef traffic-direction {
+        type enumeration {
+            enum rx;
+            enum tx;
+            enum both;
+        }
+        default both;
+    }
+
+    typedef session_status {
+        type enumeration {
+            enum "CONFIG_INCOMPLETE";
+            enum "CREATE_SUCCESS";
+            enum "CREATE_FAIL";
+        }
+        default "CREATE_FAIL";
+    }
+
+    container monitor {
+        tailf:info "Configure SPAN sessions";
+
+        list session {
+            tailf:info "Configure a SPAN session";
+
+            key "number";
+            leaf number {
+                tailf:info "SPAN session number, range 1..64";
+                type uint16 {
+                    range "1..64";
+                }
+            }
+            leaf bridge {
+                tailf:info "SPAN session bridge name";
+                type leafref {
+                    path "/network:bridges/network:bridge/network:name";
+                }
+            }
+
+            /*
+             * SPAN session source config
+             */
+            container source {
+                tailf:info "SPAN source interfaces, VMs nicid, VLANs";
+                choice source_choice {
+                    case interfaces {
+                        container interfaces {
+                            tailf:cli-compact-syntax;
+                            tailf:cli-flatten-container;
+                            tailf:cli-drop-node-name;
+                            list vm-vnic {
+                                tailf:info "SPAN source VM virtual interfaces";
+                                tailf:cli-suppress-mode;
+                                key "vm-name vnic-id";
+                                uses vm-vnic-id;
+                                leaf direction {
+                                    tailf:cli-drop-node-name;
+                                    tailf:info "Monitor rx/tx/both traffic";
+                                    type traffic-direction;
+                                }
+                            }
+                            list interface {
+                                tailf:info "SPAN source physical interfaces";
+                                tailf:cli-suppress-mode;
+                                key "name";
+                                leaf name {
+                                    tailf:info "Interface name";
+                                    type string;
+                                }
+                                leaf direction {
+                                    tailf:info "Monitor rx/tx/both traffic";
+                                    tailf:cli-drop-node-name;
+                                    type traffic-direction;
+                                }
+                            }
+                        }
+                    }
+                    case all {
+                        leaf all {
+                            tailf:info "SPAN source all physical and virtual interfaces on bridge";
+                            type empty;
+                        }
+                    }
+                    case vlan {
+                        leaf-list vlan {
+                            tailf:info "SPAN source VLANs";
+                            type uint16 {
+                                range "1..4094";
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
+             * SPAN session destination config
+             */
+            container destination {
+                tailf:info "SPAN destination interface, VM nicid, VLAN";
+                choice destination_choice {
+                    case vm-vnic {
+                        container vm-vnic {
+                            tailf:info "SPAN destination VM virtual interface";
+                            tailf:cli-sequence-commands;
+                            tailf:cli-compact-syntax;
+                            tailf:cli-flatten-container;
+                            uses vm-vnic-id {
+                                refine "vm-name" {
+                                    tailf:info "VM Name";
+                                    tailf:cli-drop-node-name;
+                                }
+                                refine "vnic-id" {
+                                    tailf:info "VM NIC Id";
+                                    tailf:cli-drop-node-name;
+                                }
+                            }
+                        }
+                    }
+                    case interface {
+                        leaf interface {
+                            tailf:info "SPAN destination physical interface";
+                            type string;
+                        }
+                    }
+                    case vlan {
+                        leaf vlan {
+                            tailf:info "SPAN destination VLAN";
+                            type uint16 {
+                                range "1..4094";
+                            }
+                            must "not(../../source/vlan) or  ../../bridge" {
+                                error-message "Bridge must be configured when source and destination vlan";
+                            }
+                            must "not(../../source/all) or  ../../bridge" {
+                                error-message "Bridge must be configured when source all and destination vlan";
+                            }
+                        }
+                    }
+                }
+            }
+
+            leaf status {
+                description "SPAN session status";
+                tailf:cdb-oper {
+                    tailf:persistent false;
+                }
+                config false;
+                type session_status;
+            }
+        }
+    }
+}

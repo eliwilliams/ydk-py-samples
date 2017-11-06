@@ -1,0 +1,36 @@
+module banner_motd {
+    namespace "http://www.cisco.com/nfvis/banner";
+    prefix "banner_motd";
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+    description
+        "This model contains YANG definitions for banner and motd";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2016-12-12 { description "Proposed"; }
+
+    container banner-motd {
+        tailf:info "User's banner and/or message of the day";
+        description "User banner configuration.";
+
+        leaf banner {
+            tailf:info "User's banner";
+            type string;
+        }
+
+        leaf motd {
+            tailf:info "User's message of the day.";
+            type string;
+        }
+
+        leaf system-banner {
+            config false;
+            tailf:callpoint nfvis_banner;
+            type string;
+        }
+    }
+
+}

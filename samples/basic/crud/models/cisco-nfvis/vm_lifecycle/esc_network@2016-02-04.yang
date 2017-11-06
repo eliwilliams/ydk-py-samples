@@ -1,0 +1,147 @@
+submodule esc_network {
+
+  belongs-to vmlc { prefix esc; }
+
+  include esc_types;
+
+  organization "Cisco Systems";
+
+  contact "Shesha Sreenivasamurthy <shesha@cisco.com>";
+
+  description
+    "ESC's Network descriptions'";
+
+  revision 2016-02-04 {
+    description "Added no_gateway to subnet";
+  }
+  revision 2015-12-02 {
+    description "Added switch_name, vlan_id, number_of_ports to network";
+  }
+  revision 2015-08-05 {
+    description " Added router:external attribute for networks ";
+  }
+  revision 2015-07-02 {
+    description "change to remove default value for provider_segmentation_id as it is not required to have a default";
+  }
+  revision 2015-06-29 {
+    description "ESC Networks change to add provider_network attributes and remove vlanID attribute";
+  }
+  revision 2014-06-23 {
+    description "ESC Networks";
+  }
+
+/*
+ * This represents the network definitions for the service
+ * created by the admin.
+ */
+  grouping esc_network {
+    container networks {
+      description "These are the 'Ephemeral' networks that will be created
+                   and destroyed during deployment. Usually these are internal
+                   network for that service which may be used for
+                   communication between VMs in this service.";
+      list network {
+        key "name";
+        leaf name {
+          description
+            "Name of the network to be created.
+             The name will be appended with the
+             deployment id during actual creation during deployment to
+             maintain uniqueness. These are given before vm_group so
+             that ESC can create the network before actually deploying
+             any VMs on the network in one pass.";
+          type escnetname;
+          mandatory true;
+        }
+        leaf shared {
+          description "Whether the network is shared among other tenants";
+          type boolean;
+          default true;
+        }
+        leaf admin_state {
+          description
+            "Specifies whether the admin state is up or down. Set to true for up
+             and false for down. If down, the network does not forward
+             packets.";
+          type boolean;
+          default true;
+        }
+        leaf router_external {
+          description
+            "Indicates whether this network is externally accessible.";
+          type boolean;
+        }
+        leaf provider_physical_network {
+          description
+           "Specifies the name of the physical network
+            over which the virtual network is implemented.";
+          type string;
+        }
+        leaf provider_network_type {
+          description
+            "Specifies the physical mechanism by which
+             the Virtual network is implemented.";
+          type string;
+        }
+        leaf provider_segmentation_id {
+          description "ID or tunnel ID of the underlying physical network";
+          type uint32;
+        }
+        leaf switch_name {
+          description "(VMWare only) Specifies the name of the switch";
+          type string;
+        }
+        leaf vlan_id {
+          description "(VMWare only) Specifies the vlan id to assign to this port group";
+          type uint32;
+        }
+        leaf number_of_ports {
+          description "(VMWare only) Specifies the number of ports to allocate on the port group";
+          type uint32;
+        }
+        list subnet {
+          key "name";
+          leaf name {
+            description "Name of the subnet";
+            type escnetname;
+            mandatory true;
+          }
+          leaf ipversion {
+            description "Size of the Volume";
+            type ipversion_t;
+            default ipv4;
+          }
+          leaf dhcp {
+            description
+              "Are IP address for the VMs on this network are
+               to be allocated by DHCP";
+            type boolean;
+            default true;
+          }
+          leaf address {
+            description "Subnet address for this network. Eg: 10.4.4.0";
+            type escipaddr;
+            mandatory true;
+          }
+          leaf netmask {
+            description "Netmask for the network";
+            type escipaddr;
+            mandatory true;
+          }
+          leaf gateway {
+            description
+              "Default GW for the network. If un specified ESC will try
+               to determine the gateway for the network.";
+            type escipaddr;
+          }
+          leaf no_gateway {
+            description
+              "no gateway for the network. It will ignore gateway setting";
+            type boolean;
+            default false;
+          }
+        }
+      }
+    }
+  }
+}

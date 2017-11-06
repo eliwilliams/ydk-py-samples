@@ -1,0 +1,178 @@
+module notifier {
+  namespace "http://www.cisco.com/nfvis/notifier";
+  prefix "notifier";
+
+  organization "Cisco Systems, Inc.";
+
+  description "Notification module for NFVIS";
+
+  contact "nfvis-yang-models@cisco.com";
+
+  revision 2017-07-31 {
+    description
+      "Released as part of NFVIS 3.6.1.
+
+       Added new leaf upgrade_name
+       Added AAA_TYPE_CREATE and AAA_TYPE_UPDATE to event_type
+       Added RECREATE_CERTIFICATE to event_type
+       Added DISK_SPACE_ALMOST_FULL to event_type
+       Added new leaf host_name
+       Added new enum for CERT";
+  }
+
+  revision 2017-03-30 {
+        description
+            "Released as part of NFVIS 3.5.1.
+
+            Initial revision";
+  }
+
+  /*
+   * The order of the leaf nodes is IMPORTANT, do not change the order of the leafs. Always add new leafs at the bottom.
+   */
+   /*
+   *  new format as follows:
+   *  user info
+   *  config change(true/false)
+   *  transaction id(0/#)
+   *  event_type -->string
+   *  event_id
+   *  status -->S/F
+   *  error-code --> 0 if sucessful
+   *  error-string --> actual string
+   */
+
+  notification nfvisEvent {
+
+    leaf user_id {
+      description "User id for user who initiated this event";
+      type string;
+    }
+
+    leaf config_change {
+      description "Whether event is a config change event";
+      type boolean;
+    }
+
+    leaf transaction_id {
+      description "User provided transaction id for the event(default is 0)";
+      type uint32 {
+        range "0..1048575";
+      }
+    }
+
+    leaf status {
+      description "The event that is being notified is success or a failure";
+      type enumeration {
+        enum SUCCESS;
+        enum FAILURE;
+     }
+    }
+
+    leaf status_code {
+      description "Error Code (0 for success)";
+      type string { length 1..32; }
+      default "0";
+    }
+
+    leaf status_message {
+      description "Description of the status code";
+      type string { length 1..1024; }
+    }
+
+    leaf details {
+      description "Human-readable description to further explain status_message";
+      type string { length 1..1024; }
+    }
+
+    leaf event_type {
+      description "Type of the event";
+      type enumeration {
+        enum WAN_DHCP_RENEW;
+        enum INTF_STATUS_CHANGE;
+        enum NETWORK_CREATE;
+        enum NETWORK_UPDATE;
+        enum NETWORK_DELETE;
+        enum UPGRADE_REGISTER;
+        enum UPGRADE_APPLY;
+        enum BRIDGE_CREATE;
+        enum BRIDGE_UPDATE;
+        enum BRIDGE_DELETE;
+        enum RBAC_USER_CREATE;
+        enum RBAC_USER_PASSWORD_UPDATE;
+        enum RBAC_USER_ROLE_UPDATE;
+        enum RBAC_USER_DELETE;
+        enum TIME_UPDATE;
+        enum TIMEZONE_UPDATE;
+        enum SECURITY_SERVER_CREATE;
+        enum SECURITY_SERVER_UPDATE;
+        enum SECURITY_SERVER_DELETE;
+        enum ROTATED_LOGS_DELETE;
+        enum AAA_TYPE_CREATE;
+        enum AAA_TYPE_UPDATE;
+        enum RECREATE_CERTIFICATE;
+        enum FILE_COPY_STATUS;
+        enum DISK_SPACE_ALMOST_FULL;
+        enum CERT_CSR_CREATE;
+        enum CERT_SWITCH_CERT;
+        enum CERT_CA_CERT_INSTALL;
+      }
+    }
+
+    leaf intf_name {
+      description "Interface name";
+      type string;
+    }
+
+    leaf intf_prv_op {
+      description "Interface previous operation/admin status";
+      type string;
+    }
+
+    leaf intf_op {
+      description "Interface current operation/admin status";
+      type string;
+    }
+
+    leaf intf_prv_link {
+      description "Interface previous operation/admin status";
+      type string;
+    }
+
+    leaf intf_link {
+      description "Interface current operation/admin status";
+      type string;
+    }
+
+    /* network API notification */
+    leaf network_name {
+      description "Network name";
+      type string;
+    }
+
+    leaf network_bridge {
+      description "The bridge name the network is using";
+      type string;
+    }
+
+    leaf network_sriov {
+      description "The sriov setting on the network";
+      type string;
+    }
+
+    leaf network_vlan {
+      description "The vlan setting on the network";
+      type string;
+    }
+
+    leaf network_trunk {
+      description "The trunk setting on the network";
+      type string;
+    }
+
+    leaf host_name {
+      description "Hostname of the system sending notification";
+      type string;
+    }
+  }
+}

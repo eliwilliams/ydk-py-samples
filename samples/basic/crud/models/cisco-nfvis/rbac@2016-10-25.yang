@@ -1,0 +1,115 @@
+module rbac   {
+  namespace "http://www.cisco.com/nfv/rbac";
+  prefix rbac;
+
+  import ietf-netconf-acm {
+    prefix nacm;
+  }
+
+  import iana-crypt-hash {
+    prefix ianach;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  organization "Cisco Systems, Inc.";
+
+  description "role base access control users configuration";
+
+  contact "nfvis-yang-models@cisco.com";
+
+  revision 2016-10-25 {
+      description "Initial revision";
+  }
+
+  typedef Role {
+      type enumeration {
+          enum administrators;
+          enum operators;
+          enum auditors;
+      }
+  }
+
+  typedef passwdStr {
+    type tailf:des3-cbc-encrypted-string;
+  }
+
+  container rbac {
+    tailf:info "simple role base access control management";
+    nacm:default-deny-all;
+    container authentication {
+      tailf:info "User management";
+      container users {
+        tailf:info "List of local users";
+        list user {
+          key name;
+          tailf:callpoint rbac_hook  {
+              tailf:set-hook subtree;
+          }
+          leaf name {
+            type string{
+                length 1..24;
+                pattern "[a-zA-Z]+[a-zA-Z0-9\-]*[a-zA-Z0-9]+";
+            }
+            tailf:info "Login name of the user - must begin with alphabet; can contain alphabets, numbers and hyphen";
+          }
+          leaf role {
+            type Role;
+            mandatory true;
+            tailf:info "Role Identifier";
+          }
+          leaf password {
+            type passwdStr;
+            mandatory true;
+            tailf:suppress-echo true;
+          }
+          tailf:action change-password {
+            tailf:info "Request password change";
+            tailf:actionpoint user_action_cb;
+            input {
+              leaf old-password {
+                type passwdStr;
+                mandatory true;
+                tailf:info "Old password";
+                tailf:suppress-echo true;
+              }
+              leaf new-password {
+                type passwdStr;
+                mandatory true;
+                tailf:info "New password";
+                tailf:suppress-echo true;
+              }
+              leaf confirm-password {
+                type passwdStr;
+                mandatory true;
+                tailf:info "Confirm New password";
+                tailf:suppress-echo true;
+              }
+            }
+          }
+          tailf:action change-role {
+            tailf:info "Request role change";
+            tailf:actionpoint user_action_cb;
+            input {
+              leaf old-role {
+                type Role;  
+                mandatory true;
+                tailf:info "Old Role";
+                tailf:suppress-echo true;
+              }
+              leaf new-role {
+                type Role;   
+                mandatory true;
+                tailf:info "New Role";
+                tailf:suppress-echo true;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

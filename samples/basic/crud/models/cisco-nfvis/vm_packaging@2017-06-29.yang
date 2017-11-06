@@ -1,0 +1,475 @@
+module vm_packaging {
+
+    namespace "http://www.cisco.com/nfv/vm_packaging";
+    prefix "vm_packaging";
+
+    import ietf-inet-types {
+       prefix inet;
+    }
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "VM Packaging configuration";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-06-29 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Advanced VM packaging options
+             Added ordered by for leaf-list raw-disk-image-names";
+    }
+
+    revision 2016-10-20 {
+        description "Initial revision";
+    }
+
+    typedef vm-type-enum {
+        type enumeration {
+
+                enum ROUTER;
+                enum FIREWALL;
+                enum vWAAS;
+                enum WLC;
+                enum WAN_OPT;
+                enum NETWORK_ANALYSIS;
+                enum VOICEMAIL;
+                enum OTHER;
+        }
+    }
+
+    typedef sriov-support-enum {
+        type enumeration {
+
+                enum ENABLED;
+                enum DISABLED;
+        }
+    }
+
+    typedef disk-bus-enum {
+        type enumeration {
+
+                enum VIRTIO;
+                enum IDE;
+        }
+    }
+
+    typedef virtual-interface-model-enum {
+        type enumeration {
+
+                enum rtl8139;
+                enum NONE;
+        }
+    }
+
+    typedef bootstrap-cloud-init-drive-enum {
+        type enumeration {
+
+                enum DISK;
+                enum CDROM;
+        }
+    }
+
+    //TODO: confirm defaults, isr will fail with current values
+    grouping resources {
+        leaf min_vcpu {
+            description "min vcpu required ";
+            tailf:info "min vcpu required ";
+            tailf:cli-show-with-default;
+            type int8;
+            default 1;
+        }
+        leaf max_vcpu {
+            description "max vcpu required ";
+            tailf:info "max vcpu required ";
+            tailf:cli-show-with-default;
+            type int8 {
+                range "0 .. 8";
+            }
+            default 8;
+        }
+        leaf min_mem_mb {
+            description "min mem required in MB ";
+            tailf:info "min mem required in MB";
+            tailf:cli-show-with-default;
+            type uint32;
+            default 1024;
+        }
+        leaf max_mem_mb {
+            description "max mem required in MB";
+            tailf:info "min mem required in MB";
+            tailf:cli-show-with-default;
+            type uint32;
+            default 32768;
+        }
+        leaf min_disk_gb {
+            description "min disk required in GB";
+            tailf:info "min disk required in GB";
+            tailf:cli-show-with-default;
+            type int8;
+            default 1;
+        }
+        leaf max_disk_gb {
+            description "max disk required in GB";
+            tailf:info "max disk required in GB";
+            tailf:cli-show-with-default;
+            type uint32;
+            default 16;
+        }
+        leaf vnic_max {
+            description "max number of VNIC allowed ";
+            tailf:info "max number of VNIC allowed ";
+            tailf:cli-show-with-default;
+            type int8 {
+                range "0 .. 8";
+            }
+            default 8;
+        }
+
+        list profiles {
+            description "profile for the package";
+            tailf:info "profile for the package";
+            max-elements 10;
+            key name;
+            uses profiles_grouping;
+        }
+
+        leaf default-profile {
+                description "Name of the default profile";
+                tailf:info "Name of the default profile";
+                type leafref {
+                    path "../profiles/name";
+                }
+                //TODO: Add check such that only one profile can be default profile
+        }
+    }
+
+    grouping profiles_grouping {
+        leaf name {
+            description "profile name";
+            tailf:info "profile name";
+            type string {
+                length 1..128;
+                pattern "[a-zA-Z0-9\-_.]*";
+            }
+        }
+        leaf description {
+            description "description of profile";
+            tailf:info "description of profile";
+            type string {
+                length 1..128;
+                pattern "[a-zA-Z0-9\-_.]*";
+            }
+        }
+        leaf cpu {
+            description "number of vcpu required";
+            tailf:info "number of vcpu required";
+            tailf:cli-show-with-default;
+            type int8;
+            default 1;
+            must "(. > (../../min_vcpu)) or (. = (../../min_vcpu))" {
+                error-message "Value of cpu should be greater than or equal to min_vcpu";
+            }
+            must "(. < (../../max_vcpu)) or (. = (../../max_vcpu))" {
+                error-message "Value of cpu should be less than or equal to max_vcpu";
+            }
+        }
+        leaf memory {
+            description "minimum memory required in MB";
+            tailf:info "minimum memory required in MB";
+            tailf:cli-show-with-default;
+            type uint32;
+            default 1024;
+            must "(. > (../../min_mem_mb)) or (. = (../../min_mem_mb))" {
+                error-message "Value of cpu should be greater than or equal to min_mem_mb";
+            }
+            must "(. < (../../max_mem_mb)) or (. = (../../max_mem_mb))" {
+                error-message "Value of cpu should be less than or equal to max_mem_mb";
+            }
+        }
+        leaf disk {
+            description "minimum disk space required in MB";
+            tailf:info "minimum disk space required in MB";
+            tailf:cli-show-with-default;
+            type uint32;
+            default 1024;
+            must "(. > ((../../min_disk_gb)*1024)) or (. = ((../../min_disk_gb)*1024))" {
+                error-message "Value of cpu should be greater than or equal to min_disk_gb";
+            }
+            must "(. < ((../../max_disk_gb)*1024)) or ((. = (../../max_disk_gb)*1024))" {
+                error-message "Value of cpu should be less than or equal to max_disk_gb";
+            }
+        }
+    }
+
+    grouping vm_info {
+        leaf vm-image-name {
+            mandatory true;
+            description "vm name ";
+            tailf:info "vm name";
+            type string {
+                length 1..32;
+                pattern "[a-zA-Z0-9\-_.]*";
+            }
+        }
+        leaf vm-type {
+            mandatory true;
+            description "select vm type";
+            tailf:info "select vm type";
+            type vm-type-enum;
+        }
+        leaf vm-version {
+            mandatory true;
+            description "vm version ";
+            tailf:info "vm version";
+            type string {
+                length 1..32;
+                pattern "[a-zA-Z0-9\-_.]*";
+            }
+        }
+        leaf monitored {
+            description "vm monitored ";
+            tailf:info "vm monitored";
+            tailf:cli-show-with-default;
+            type boolean;
+            default false;
+            when "../bootstrap-filenames !='[]' ";
+
+        }
+        leaf optimize {
+            description "dedicated cpu core assignement";
+            tailf:info "dedicated cpu core assignement";
+            tailf:cli-show-with-default;
+            type boolean;
+            default false;
+        }
+        leaf privileged {
+            description "VM with some privileges (Not supported in this release) ";
+            tailf:info "VM with some privileges(Not supported in this release)";
+            tailf:cli-show-with-default;
+            type boolean;
+            default false;
+            //not supported in backend yet
+        }
+    }
+
+    grouping bootstrap_info {
+        leaf bootstrap-filename {
+            description "bootstrap filename";
+            tailf:info "bootstrap filename";
+            type string {
+                length 1..128;
+                pattern "[a-zA-Z0-9\-_.]*";
+            }
+        }
+        leaf destination {
+            description "destination of bootstrap file, default is root(/) and openstack/content";
+            tailf:info "destination of bootstrap file, default is root(/) and openstack/content";
+            type string {
+                length 1..128;
+                pattern "[a-zA-Z0-9\-_./]*";
+            }
+        }
+    }
+
+    grouping custom_properties_info {
+        leaf custom-property-key {
+            description "name of the variable to be replaced in the bootstrap config file ";
+            tailf:info "name of the variable to be replaced in the bootstrap config file";
+            type string{
+                length 1..32;
+                pattern "[A-Z0-9\-_.]*";
+            }
+        }
+        leaf-list custom-property-value {
+            //mandatory when key is given; minimum val is 1;
+            description "value/s for the variable to be replaced in the bootstrap config file ";
+            tailf:info "value/s for the variable to be replaced in the bootstrap config file";
+            must "true() = (../custom-property-key)" {
+                error-message "Please specify a value for the custom property key ";
+            }
+            type string{
+                length 0..32;
+                pattern "[a-zA-Z0-9\-_.,]*";
+            }
+        }
+    }
+
+    container vm_packages {
+
+        description "VM package configurations";
+        tailf:info "VM package configuration";
+
+        list vm_package {
+
+            key "package-name package-uuid";
+
+            leaf package-name {
+                description "vm package name";
+                type string {
+                    length 1..32;
+                    pattern "[a-zA-Z0-9\-_.]*";
+                }
+            }
+
+            leaf package-uuid {
+                description "vm package uuid";
+                type string {
+                    length 1..36;
+                    pattern "[a-zA-Z0-9\-_.]*";
+                }
+            }
+
+            leaf-list raw-disk-image-names {
+                description "raw disk image file name list ";
+                tailf:info "raw disk image file name list";
+                min-elements 1;
+                max-elements 10;
+                ordered-by user;
+                type string {
+                    length 1..128;
+                    pattern "[a-zA-Z0-9\-_.]*";
+                }
+                //TODO: add rules to use *.qow2 and *.img as the image types
+                //TODO: also add rules for iso
+            }
+
+            uses vm_info;
+
+            list bootstrap-filenames {
+                description "bootstrap image file name & destination list ";
+                tailf:info "bootstrap image file name & destination list";
+                key bootstrap-filename;
+                max-elements 20;
+                uses bootstrap_info;
+            }
+
+            uses resources;
+
+            leaf sriov-support {
+                description "sriov support enabled/disabled";
+                tailf:info "sriov support enabled/disabled";
+                tailf:cli-show-with-default;
+                type sriov-support-enum;
+                default DISABLED;
+            }
+
+            leaf-list sriov-list {
+                description "sriov driver list ";
+                tailf:info "sriov driver list";
+                max-elements 6;
+                type string {
+                    length 1..32;
+                    pattern "[a-zA-Z0-9\-_]*";
+                }
+                when "../sriov-support ='ENABLED' ";
+            }
+
+            leaf-list pcie-list {
+                //TODO: Not supported in current release
+                //make this enum, we need a flag enabled, default false
+                description "Not supported";
+                tailf:info "Not supported";
+                max-elements 6;
+                type string {
+                    length 1..32;
+                    pattern "[a-zA-Z0-9\-_]*";
+                }
+                tailf:hidden "none";
+                //tailf:cli-drop-node-name;
+                //TODO: show driver list only when pcie is enabled
+            }
+
+            list custom-properties{
+                description "custom properties list ";
+                tailf:info "custom properties list";
+                key custom-property-key;
+                uses custom_properties_info;
+            }
+
+            leaf serial-console {
+                description "attach console type serial to vm: true/false";
+                tailf:info "attach console type serial to vm: true/false";
+                tailf:cli-show-with-default;
+                type boolean;
+                default false;
+            }
+
+            leaf raw-disk-file-bus {
+                description "raw disk file bus: virtio/ide";
+                tailf:info "raw disk file bus: virtio/ide";
+                tailf:cli-show-with-default;
+                type disk-bus-enum;
+                default VIRTIO;
+            }
+
+            leaf virtual-interface-model {
+                description "virtual interface model: rtl8139/NONE";
+                tailf:info "virtual interface model: rtl8139/NONE";
+                tailf:cli-show-with-default;
+                type virtual-interface-model-enum;
+                default NONE;
+            }
+
+            leaf thick-disk-provisioning {
+                description "thick disk provisioning: true/false";
+                tailf:info "thick disk provisioning: true/false";
+                tailf:cli-show-with-default;
+                type boolean;
+                default false;
+            }
+
+            leaf bootstrap-cloud-init-bus {
+                description "bootstrap cloud init bus type: virtio/ide";
+                tailf:info "bootstrap cloud init bus type: virtio/ide";
+                tailf:cli-show-with-default;
+                type disk-bus-enum;
+                default IDE;
+                when "../bootstrap-filenames !='[]' ";
+            }
+
+            leaf bootstrap-cloud-init-drive {
+                description "bootstrap cloud init drive type: disk/cdrom";
+                tailf:info "bootstrap cloud init drive type: disk/cdrom";
+                tailf:cli-show-with-default;
+                type bootstrap-cloud-init-drive-enum;
+                default CDROM;
+                when "../bootstrap-filenames !='[]' ";
+            }
+
+            leaf state {
+                    description "Package state: creating/success/error";
+                    tailf:info "Package state: creating/success/error";
+                    default "CREATING";
+                    tailf:cdb-oper {
+                        tailf:persistent true;
+                    }
+                    config false;
+                    type enumeration {
+                        enum "CREATING";
+                        enum "COMPLETE";
+                        enum "ERROR";
+                        enum "UNKNOWN";
+                    }
+            }
+
+            leaf error-message {
+                    description "Description for package creation failure";
+                    tailf:info "Description for package creation failure";
+                    tailf:cdb-oper {
+                        tailf:persistent true;
+                    }
+                    config false;
+                    type string {
+                    length 1..1024;
+                    }
+                    when "../state ='ERROR' ";
+            }
+        }
+    }
+}

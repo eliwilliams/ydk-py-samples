@@ -1,0 +1,190 @@
+    submodule system_upgrade {
+
+    belongs-to system {
+        prefix "system_upgrade";
+    }
+
+    import ietf-inet-types { prefix inet; }
+
+    import ietf-yang-types { prefix yang; }
+
+    import tailf-common { prefix tailf; }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Upgrade management within NFVIS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2017-05-25 {
+        description
+            "Released as part of NFVIS 3.6.1.
+
+             Added ':' to location pattern";
+    }
+
+    revision 2016-07-13 {
+        description "Initial revision";
+    }
+
+    grouping system_upgrade {
+      container upgrade {
+        description "Upgrade NFVIS";
+        tailf:info "Upgrade NFVIS";
+
+          list apply-image {
+            description "Upgrade NFVIS with image given";
+            tailf:info "Upgrade NFVIS with image given";
+
+            key name;
+
+            leaf name {
+                description "upgrade to an image configured from upgrade/image-name";
+                tailf:info "reference to an image configured from upgrade/image-name";
+                type leafref {
+                    path "/system/upgrade/image-name/name";
+                }
+            }
+
+            leaf scheduled-time {
+                    description "Hours from now to schedule upgrade from 0-24 hrs";
+                    tailf:info "Hours from now to schedule upgrade from 0-24 hrs";
+                    type uint8{
+                      range "0..24";
+                    }
+                    mandatory true;
+            }
+
+            leaf sys-backup {
+                    description "Backup ConfD Database - optional";
+                    tailf:info "Backup ConfD Database - optional";
+                    type empty;
+            }
+
+            leaf vm-backup {
+                    description "Backup VM vol - optional";
+                    tailf:info "Backup VM vol - optional";
+                    type empty;
+            }
+
+            leaf auto-restore {
+                    description "Restore previous image upon upgrade failure - optional";
+                    tailf:info "Restore previous image upon upgrade failure - optional";
+                    type empty;
+            }
+
+            leaf status {
+                description "Upgrade image status";
+                tailf:info "Upgrade image status";
+                config false;
+                tailf:callpoint apply_status;
+                type string;
+            }
+            leaf upgrade-from {
+                description "Upgraded from  image version";
+                tailf:info "Upgraded from  image version";
+                config false;
+                tailf:cdb-oper {
+                    tailf:persistent true;
+                }
+                type string {
+                    pattern "[a-zA-Z0-9\-\.]+";
+                    length 1..20;
+                }
+            }
+            leaf upgrade-to {
+                description "Upgraded to image version";
+                tailf:info "Upgraded to image version";
+                config false;
+                tailf:cdb-oper {
+                    tailf:persistent true;
+                }
+                type string {
+                    pattern "[a-zA-Z0-9\-\.]+";
+                    length 1..20;
+                }
+            }
+
+        }
+
+        list image-name {
+                        description "This container is used to save config data related to upgrade registration.";
+                        tailf:info "Register new Upgrades.";
+                        key name;
+
+                        leaf name {
+                                    description "Unique name provided by user for upgrade";
+                                    tailf:info "(Required) Enter name for upgrade < String: /[a-zA-Z0-9\-_]*/ >\n  Existing: ";
+                                    type string {
+                                           pattern "[a-zA-Z0-9\-_\.]+";
+                                           length 1..256;
+                                    }
+                        }
+
+                        leaf location {
+                                    description "Location of the image in local disk";
+                                    tailf:info "(Optional) Input the path of the folder that contains upgrade image. <default:/data/upgrade/package>";
+                                    default "/data/upgrade/package";
+                                    type string {
+                                            pattern "[a-zA-Z0-9\-_/\.:]+";
+                                            length 1..256;
+                                    }
+
+                        }
+
+                }
+
+        container reg-info{
+                        description "This container is used for operational data related to upgrade registration.";
+                        config false;
+                        tailf:callpoint upgrade_register_oper;
+                        tailf:info "View Registered Upgrades";
+
+                        list name {
+                                key "name";
+                                leaf name {
+                                            description "Unique upgrade name proveided by user";
+                                            type string {
+                                                pattern "[a-zA-Z0-9\-_\.]+";
+                                                length 1..256;
+                                            }
+                                }
+                                leaf location {
+                                            description "Location of the image in local disk";
+                                            tailf:info "Get location of upgrade image.";
+                                            type string {
+                                                pattern "[a-zA-Z0-9\-_/\.]+";
+                                                length 1..256;
+                                            }
+
+                                }
+                                leaf package-version {
+                                            description "Version of image";
+                                            tailf:info "Get version of upgrade image.";
+                                            default "0.0.0";
+                                            type string {
+                                                pattern "[a-zA-Z0-9\-\.]+";
+                                                length 1..20;
+                                            }
+                                }
+                                leaf status {
+                                            description "Image Registration status";
+                                            tailf:info "Get image Registration status.";
+                                            default "Unknown";
+                                            type enumeration {
+                                                enum "Valid";
+                                                enum "Invalid";
+                                                enum "Unknown";
+                                            }
+                                }
+                                leaf upload-date {
+                                            description "Date and time of registration. Format YYYY-MM-DDTHH:MM:SS";
+                                            tailf:info "Get Date and time of registration. Format YYYY-MM-DDTHH:MM:SS";
+                                            default "0001-01-01T00:00:00+00:00";
+                                            type yang:date-and-time;
+                                }
+                        }
+                }
+    }
+  }
+}

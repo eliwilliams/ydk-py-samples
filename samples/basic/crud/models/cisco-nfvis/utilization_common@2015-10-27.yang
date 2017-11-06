@@ -1,0 +1,107 @@
+module utilization_common {
+    namespace "http://www.cisco.com/nfvos/utilization_common";
+    prefix "utilization_common";
+
+    import tailf-common { prefix tailf; }
+    import ietf-yang-types { prefix yang; }
+
+    organization "Cisco Systems, Inc.";
+
+    description
+        "Utilization common parameters";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2015-10-27 { description "Proposed"; }
+
+    grouping request_time_info {
+        description
+            "Required duration of collection";
+
+        leaf duration {
+            tailf:info "1min/5min/15min/30min/1h/6h/1d/5d/30d";
+            type enumeration {
+                enum 1min;
+                enum 5min;
+                enum 15min;
+                enum 30min;
+                enum 1h;
+                enum 1H;
+                enum 6h;
+                enum 6H;
+                enum 1d;
+                enum 1D;
+                enum 5d;
+                enum 5D;
+                enum 30d;
+                enum 30D;
+            }
+            description
+                "Duration of collections";
+        }
+    }
+
+    grouping collect_time_info {
+        description
+            "Date and time and collecting interval of the collections";
+
+        leaf collect-start-date-time {
+            //To prevent the show command auto-complete from allowing an input value for collect-start-date-time
+            tailf:cli-suppress-show-match;
+            config false;
+            type yang:date-and-time;
+            tailf:info "Start date and time of data collection";
+            description
+                "The start date and time of the collections";
+        }
+        leaf collect-interval-seconds {
+            //To prevent the show command auto-complete from allowing an input value for collect-interval-seconds
+            tailf:cli-suppress-show-match;
+            config false;
+            type uint32;
+            tailf:info "Collection interval in seconds";
+            description
+                "The real collecting interval in seconds";
+            units "seconds";
+        }
+    }
+
+    grouping mem_utilization {
+        leaf buffered-MB {
+            type string;
+            description
+                "an array of buffered memory usages";
+            units "MBytes";
+        }
+        leaf cached-MB {
+            type string;
+            description
+                "an array of cached memory usages";
+            units "MBytes";
+        }
+        leaf free-MB {
+            type string;
+            description
+                "an array of free memory usages";
+            units "MBytes";
+        }
+        leaf used-MB {
+            type string;
+            description
+                "an array of used memory usages";
+            units "MBytes";
+        }
+        leaf slab-recl-MB {
+            type string;
+            description
+                "an array of slab_recl memory usages";
+            units "MBytes";
+        }
+        leaf slab-unrecl-MB {
+            type string;
+            description
+                "an array of slab_unrecl memory usages";
+            units "MBytes";
+        }
+    }
+}

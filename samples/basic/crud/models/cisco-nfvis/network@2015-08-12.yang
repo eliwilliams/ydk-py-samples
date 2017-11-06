@@ -1,0 +1,199 @@
+module network {
+    namespace "http://www.cisco.com/nfv/network";
+    prefix "network";
+
+    import ietf-inet-types {
+       prefix inet;
+    }
+
+    import tailf-common {
+          prefix tailf;
+    }
+
+    organization "Cisco Systems, Inc.";
+
+    description "Network managent within NFVOS";
+
+    contact "nfvis-yang-models@cisco.com";
+
+    revision 2015-08-12 {
+        description "Initial revision";
+    }
+     
+    container networks {
+		
+		description "Create  networks to attach VNF";
+                tailf:validate network_validate {
+                    tailf:dependency '.';
+                }
+
+		list network {
+			key name;
+			ordered-by user;
+			leaf name {
+				description "The name of the network";
+				type string { 
+                                    pattern "[a-zA-Z0-9\-_]*";
+                                    length 1..15;
+                                }
+			}		
+			
+			leaf-list vlan {
+				description "list of VLANs for this network";
+				type uint16;
+				when "../sriov = 'false'";
+			}
+			
+			leaf trunk {
+				description	"set to trunk mode";
+				type boolean;
+				default true;
+				when "../sriov = 'false'";
+			}
+			
+			leaf bridge {
+				description "attach this network to a bridge";
+                                type leafref {
+                                    path "/bridges/bridge/name";
+                                }
+				mandatory true;
+				when "../sriov = 'false'";
+			}
+
+			leaf sriov {
+				description "SRIOV Network";
+				type boolean;
+				default false;
+			}
+			
+		}
+	}
+	
+	container bridges {
+		description "Create bridges for VNF";
+
+	       tailf:unique-selector 'bridge/port' {
+                        tailf:unique-leaf name;
+                }
+
+		
+		list bridge {
+		
+			key name;
+			ordered-by user;
+
+			leaf name {
+				description "name of the bridge";
+				type string { 
+                                    pattern "[a-zA-Z0-9\-_]*";
+                                    length 1..15;
+                                }
+			}
+
+			list port {
+				key name;
+				leaf name {
+				type string;
+				description "list of ports assigned to the bridge";
+				}
+			}
+		}
+	}
+
+    grouping interface_stats {
+        description "Interface stats information";
+
+        leaf rx_packets {
+            type uint64;
+        }
+
+        leaf rx_bytes {
+            type uint64;
+        }
+
+        leaf rx_errors {
+            type uint64;
+        }
+
+        leaf rx_dropped {
+            type uint64;
+        }
+
+        leaf rx_overruns {
+            type uint64;
+        }
+
+        leaf rx_frame {
+            type uint64;
+        }
+
+        leaf rx_crc {
+            type uint64;
+        }
+
+        leaf tx_packets {
+            type uint64;
+        }
+
+        leaf tx_bytes {
+            type uint64;
+        }
+
+        leaf tx_errors {
+            type uint64;
+        }
+
+        leaf tx_dropped {
+            type uint64;
+        }
+
+        leaf tx_overruns {
+            type uint64;
+        }
+
+        leaf tx_carrier {
+            type uint64;
+        }
+
+        leaf tx_collisions {
+            type uint64;
+        }
+    }
+
+    container vm_vnic_stats {
+        description "Show VM vnic statistics. User should provide
+                     deployment name, VM group name and nic_id";
+        tailf:info  "Show VM vnic statistics";
+
+        list vm_vnic_stat {
+            config false;
+            tailf:callpoint vm_vnic_stats;
+            tailf:info "Show VM vnic stats. Input: deployment, VM name and nic_id";
+            key "deployment-name vm-group-name nic_id";
+            leaf deployment-name {
+                tailf:info "The deployment name";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            leaf vm-group-name {
+                tailf:info "The VM group name in the deployment";
+                type string { pattern "[a-zA-Z0-9.\-_]*"; }
+            }
+            leaf nic_id {
+                tailf:info "The VM nic id";
+                type uint16 {
+                    range "0..8";
+                }
+            }
+            container host-stats {
+                config false;
+                tailf:info "VM Vnic stats information at HOST level";
+                uses interface_stats;
+            }
+            container bridge-stats {
+                config false;
+                tailf:info "VM Vnic stats information at Bridge level";
+                uses interface_stats;
+            }
+        }
+    }
+}
